@@ -1,0 +1,1 @@
+{ "name": "web", "projectType": "application", "sourceRoot": "apps/web/src", "tags": ["scope:web"], "targets": { "build": { "command": "yarn workspace @flowboard/web build" }, "lint": { "command": "yarn workspace @flowboard/web lint" } } }

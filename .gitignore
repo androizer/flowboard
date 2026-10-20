@@ -1,0 +1,7 @@
+node_modules
+dist
+.env
+compose.override.yml
+.DS_Store
+apps/api/prisma/dev.db
+*.log

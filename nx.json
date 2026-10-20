@@ -1,0 +1,7 @@
+{
+  "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "namedInputs": { "default": ["{projectRoot}/**/*", "sharedGlobals"] },
+  "targetDefaults": { "build": { "inputs": ["default", "^default"] } },
+  "plugins": [],
+  "workspaceLayout": { "appsDir": "apps", "libsDir": "libs" }
+}
