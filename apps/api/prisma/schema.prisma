@@ -1,0 +1,364 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------------------------------------------
+// Shared domain values
+// -----------------------------------------------------------------------------
+
+/// The only permitted container path is workspace -> space -> folder -> list.
+enum ContainerType {
+  space
+  folder
+  list
+}
+
+/// Visibility is evaluated with grants across the full ancestor path.
+enum Visibility {
+  public
+  private
+}
+
+/// Workspace-scoped authority; never trust this value from a client or JWT.
+enum MembershipRole {
+  admin
+  member
+}
+
+/// An explicit deny wins over any allow on a member's resource path.
+enum GrantMode {
+  allow
+  deny
+}
+
+/// Every effective status set must contain not_started, active, and done.
+enum StatusCategory {
+  not_started
+  active
+  done
+  closed
+}
+
+/// The six task custom-field types supported by the MVP.
+enum FieldType {
+  text
+  number
+  single_select
+  multi_select
+  date
+  checkbox
+}
+
+/// Built-in task priority; its declared order is also the documented sort order.
+enum Priority {
+  urgent
+  high
+  normal
+  low
+  none
+}
+
+// -----------------------------------------------------------------------------
+// Hierarchy ownership: workspace and its strict space/folder/list tree
+// -----------------------------------------------------------------------------
+
+/// The single MVP tenant. All domain records are scoped to this root.
+model Workspace {
+  id          String                  @id @default(uuid()) @db.Uuid
+  name        String
+  containers  Container[]
+  memberships WorkspaceMembership[]
+  statusSets  StatusSet[]
+  fields      CustomFieldDefinition[]
+  tasks       Task[]
+  grants      ContainerGrant[]
+
+  @@map("workspaces")
+}
+
+/// One row represents a space, folder, or list; only lists may hold tasks.
+/// Archive instead of deleting so retained configuration/task references stay valid.
+model Container {
+  id                String                  @id @default(uuid()) @db.Uuid
+  workspaceId       String                  @map("workspace_id") @db.Uuid
+  parentContainerId String?                 @map("parent_container_id") @db.Uuid
+  type              ContainerType
+  name              String
+  visibility        Visibility              @default(public)
+  position          Decimal                 @db.Decimal(18, 6)
+  archivedAt        DateTime?               @map("archived_at") @db.Timestamptz(6)
+  createdAt         DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
+  workspace         Workspace               @relation(fields: [workspaceId], references: [id])
+  parent            Container?              @relation("container_parent", fields: [parentContainerId], references: [id])
+  children          Container[]             @relation("container_parent")
+  grants            ContainerGrant[]
+  statusSet         StatusSet?
+  fields            CustomFieldDefinition[]
+  tasks             Task[]
+
+  @@unique([id, workspaceId])
+  @@index([workspaceId, parentContainerId, position])
+  @@map("containers")
+}
+
+// -----------------------------------------------------------------------------
+// Identity ownership: stable users, proofs, credentials, memberships, sessions
+// -----------------------------------------------------------------------------
+
+/// Stable application person. Task and permission references always point here,
+/// regardless of whether they sign in locally or through a future provider.
+model User {
+  id           String                @id @default(uuid()) @db.Uuid
+  displayName  String                @map("display_name")
+  isActive     Boolean               @default(true) @map("is_active")
+  createdAt    DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  identities   AuthIdentity[]
+  credential   UserCredential?
+  memberships  WorkspaceMembership[]
+  sessions     AuthSession[]
+  createdTasks Task[]
+  assignments  TaskAssignee[]
+
+  @@map("users")
+}
+
+/// A verified issuer/subject proof linked to one internal user.
+/// Do not auto-link provider identities by email.
+model AuthIdentity {
+  id       String        @id @default(uuid()) @db.Uuid
+  userId   String        @map("user_id") @db.Uuid
+  issuer   String
+  subject  String
+  user     User          @relation(fields: [userId], references: [id])
+  sessions AuthSession[]
+
+  @@unique([issuer, subject])
+  @@unique([id, userId])
+  @@map("auth_identities")
+}
+
+/// Optional local username/email and Argon2id hash, owned directly by User.
+/// Deliberately has no authIdentityId: credential ownership is user-based.
+model UserCredential {
+  userId            String   @id @map("user_id") @db.Uuid
+  loginIdentifier   String   @unique @map("login_identifier")
+  passwordHash      String   @map("password_hash")
+  passwordChangedAt DateTime @default(now()) @map("password_changed_at") @db.Timestamptz(6)
+  user              User     @relation(fields: [userId], references: [id])
+
+  @@map("user_credentials")
+}
+
+/// Current role and activation state for one user in one workspace.
+/// Authorization reloads this record rather than trusting stale token claims.
+model WorkspaceMembership {
+  workspaceId String           @map("workspace_id") @db.Uuid
+  userId      String           @map("user_id") @db.Uuid
+  role        MembershipRole
+  isActive    Boolean          @default(true) @map("is_active")
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id])
+  user        User             @relation(fields: [userId], references: [id])
+  grants      ContainerGrant[]
+  assignments TaskAssignee[]
+
+  @@id([workspaceId, userId])
+  @@map("workspace_memberships")
+}
+
+/// One Flowboard login. revokedAt is the only refresh-family revocation source.
+/// The SQL migration also enforces that identity and user belong to the same person.
+model AuthSession {
+  id             String         @id @default(uuid()) @db.Uuid
+  userId         String         @map("user_id") @db.Uuid
+  authIdentityId String         @map("auth_identity_id") @db.Uuid
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt      DateTime       @map("expires_at") @db.Timestamptz(6)
+  revokedAt      DateTime?      @map("revoked_at") @db.Timestamptz(6)
+  user           User           @relation(fields: [userId], references: [id])
+  identity       AuthIdentity   @relation(fields: [authIdentityId], references: [id])
+  refreshTokens  RefreshToken[]
+
+  @@unique([id, userId])
+  @@index([userId, expiresAt])
+  @@map("auth_sessions")
+}
+
+/// Hash-only refresh-token history for a single session.
+/// parentTokenId is unique, so a consumed token can have only one successor.
+model RefreshToken {
+  id            String        @id @default(uuid()) @db.Uuid
+  sessionId     String        @map("session_id") @db.Uuid
+  parentTokenId String?       @unique @map("parent_token_id") @db.Uuid
+  tokenHash     String        @unique @map("token_hash")
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt     DateTime      @map("expires_at") @db.Timestamptz(6)
+  consumedAt    DateTime?     @map("consumed_at") @db.Timestamptz(6)
+  session       AuthSession   @relation(fields: [sessionId], references: [id])
+  parent        RefreshToken? @relation("token_chain", fields: [parentTokenId], references: [id])
+  child         RefreshToken? @relation("token_chain")
+
+  @@index([sessionId])
+  @@map("refresh_tokens")
+}
+
+// -----------------------------------------------------------------------------
+// Permission ownership
+// -----------------------------------------------------------------------------
+
+/// One allow/deny decision for a workspace member on one container.
+/// The composite membership relation prevents cross-workspace grants.
+model ContainerGrant {
+  id          String              @id @default(uuid()) @db.Uuid
+  workspaceId String              @map("workspace_id") @db.Uuid
+  containerId String              @map("container_id") @db.Uuid
+  userId      String              @map("user_id") @db.Uuid
+  mode        GrantMode
+  workspace   Workspace           @relation(fields: [workspaceId], references: [id])
+  container   Container           @relation(fields: [containerId], references: [id])
+  membership  WorkspaceMembership @relation(fields: [workspaceId, userId], references: [workspaceId, userId])
+
+  @@unique([workspaceId, containerId, userId])
+  @@index([workspaceId, userId])
+  @@map("container_grants")
+}
+
+// -----------------------------------------------------------------------------
+// Status configuration ownership
+// -----------------------------------------------------------------------------
+
+/// A complete menu of status definitions. A null owner is the workspace fallback;
+/// a local owner replaces—not merges with—its inherited set.
+model StatusSet {
+  id               String     @id @default(uuid()) @db.Uuid
+  workspaceId      String     @map("workspace_id") @db.Uuid
+  ownerContainerId String?    @unique @map("owner_container_id") @db.Uuid
+  createdAt        DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+  workspace        Workspace  @relation(fields: [workspaceId], references: [id])
+  owner            Container? @relation(fields: [ownerContainerId], references: [id])
+  statuses         Status[]
+
+  @@index([workspaceId])
+  @@map("status_sets")
+}
+
+/// One ordered status definition. Tasks store key, not this row ID, so labels and
+/// display order can change without rewriting tasks.
+model Status {
+  id          String         @id @default(uuid()) @db.Uuid
+  statusSetId String         @map("status_set_id") @db.Uuid
+  key         String
+  name        String
+  category    StatusCategory
+  color       String
+  position    Decimal        @db.Decimal(18, 6)
+  statusSet   StatusSet      @relation(fields: [statusSetId], references: [id], onDelete: Cascade)
+
+  @@unique([statusSetId, key])
+  @@map("statuses")
+}
+
+// -----------------------------------------------------------------------------
+// Custom-field configuration ownership
+// -----------------------------------------------------------------------------
+
+/// A typed question defined at a space, folder, or list. Keys are immutable and
+/// unique per workspace; descendant containers cannot override inherited keys.
+model CustomFieldDefinition {
+  id               String              @id @default(uuid()) @db.Uuid
+  workspaceId      String              @map("workspace_id") @db.Uuid
+  ownerContainerId String              @map("owner_container_id") @db.Uuid
+  key              String
+  name             String
+  type             FieldType
+  required         Boolean             @default(false)
+  position         Decimal             @db.Decimal(18, 6)
+  createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+  workspace        Workspace           @relation(fields: [workspaceId], references: [id])
+  owner            Container           @relation(fields: [ownerContainerId], references: [id])
+  options          CustomFieldOption[]
+  values           TaskFieldValue[]
+
+  @@unique([workspaceId, key])
+  @@index([ownerContainerId, position])
+  @@map("custom_field_definitions")
+}
+
+/// Stable choice for a select field. Task values retain the option ID, not label.
+model CustomFieldOption {
+  id                String                @id @default(uuid()) @db.Uuid
+  fieldDefinitionId String                @map("field_definition_id") @db.Uuid
+  label             String
+  color             String
+  position          Decimal               @db.Decimal(18, 6)
+  definition        CustomFieldDefinition @relation(fields: [fieldDefinitionId], references: [id], onDelete: Cascade)
+
+  @@map("custom_field_options")
+}
+
+// -----------------------------------------------------------------------------
+// Task ownership: task record, membership assignments, and custom answers
+// -----------------------------------------------------------------------------
+
+/// A unit of work in exactly one primary list. Board cards and table rows are
+/// projections of this record, never separate persisted entities.
+model Task {
+  id              String           @id @default(uuid()) @db.Uuid
+  workspaceId     String           @map("workspace_id") @db.Uuid
+  primaryListId   String           @map("primary_list_id") @db.Uuid
+  createdByUserId String           @map("created_by_user_id") @db.Uuid
+  title           String
+  description     String?
+  statusKey       String           @map("status_key")
+  priority        Priority         @default(none)
+  dueDate         DateTime?        @map("due_date") @db.Timestamptz(6)
+  position        Decimal          @db.Decimal(18, 6)
+  version         Int              @default(1)
+  archivedAt      DateTime?        @map("archived_at") @db.Timestamptz(6)
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  workspace       Workspace        @relation(fields: [workspaceId], references: [id])
+  list            Container        @relation(fields: [primaryListId], references: [id])
+  creator         User             @relation(fields: [createdByUserId], references: [id])
+  assignees       TaskAssignee[]
+  fieldValues     TaskFieldValue[]
+
+  @@index([primaryListId, statusKey, position])
+  @@index([workspaceId, dueDate])
+  @@map("tasks")
+}
+
+/// Join table for zero-or-more assignees. Assignment never grants list access.
+model TaskAssignee {
+  taskId      String              @map("task_id") @db.Uuid
+  userId      String              @map("user_id") @db.Uuid
+  workspaceId String              @map("workspace_id") @db.Uuid
+  task        Task                @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user        User                @relation(fields: [userId], references: [id])
+  membership  WorkspaceMembership @relation(fields: [workspaceId, userId], references: [workspaceId, userId])
+
+  @@id([taskId, userId])
+  @@map("task_assignees")
+}
+
+/// One JSON value per task/definition. Missing rows represent unanswered optional
+/// fields; type and option validity are enforced by the custom-field workflow.
+model TaskFieldValue {
+  taskId            String                @map("task_id") @db.Uuid
+  fieldDefinitionId String                @map("field_definition_id") @db.Uuid
+  workspaceId       String                @map("workspace_id") @db.Uuid
+  value             Json
+  task              Task                  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  definition        CustomFieldDefinition @relation(fields: [fieldDefinitionId], references: [id])
+
+  @@id([taskId, fieldDefinitionId])
+  @@map("task_field_values")
+}
