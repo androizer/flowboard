@@ -4,10 +4,12 @@ import { PrismaService } from '../persistence/prisma.service';
 
 export type DomainDb = Prisma.TransactionClient;
 
+/** Owns workspace containers and their space → folder → list paths. */
 @Injectable()
 export class HierarchyService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** Returns live containers whose full parent chain is also live. */
   async activeTree(workspaceId: string, db: DomainDb = this.prisma) {
     const nodes = await db.container.findMany({
       where: { workspaceId, archivedAt: null },
@@ -25,6 +27,7 @@ export class HierarchyService {
     });
   }
 
+  /** Builds a live path from space to container; rejects missing or archived branches. */
   async path(
     workspaceId: string,
     containerId: string,
@@ -44,6 +47,7 @@ export class HierarchyService {
     return path;
   }
 
+  /** Requires a complete space → folder → list path for list operations. */
   async listPath(workspaceId: string, listId: string, db: DomainDb = this.prisma) {
     const path = await this.path(workspaceId, listId, db);
     if (path.at(-1)?.type !== 'list' || path.length !== 3 || path[1].type !== 'folder')
@@ -51,16 +55,19 @@ export class HierarchyService {
     return path;
   }
 
+  /** Loads a workspace or reports that it is unavailable. */
   async workspace(id: string, db: DomainDb = this.prisma) {
     const row = await db.workspace.findUnique({ where: { id } });
     if (!row) throw new NotFoundException('Workspace is unavailable.');
     return row;
   }
 
+  /** Changes the workspace name through the caller’s transaction. */
   async renameWorkspace(id: string, name: string, db: DomainDb) {
     return db.workspace.update({ where: { id }, data: { name } });
   }
 
+  /** Appends a container after its live siblings and records its parent type. */
   async create(
     workspaceId: string,
     parent: Container | null,
@@ -87,6 +94,7 @@ export class HierarchyService {
     });
   }
 
+  /** Saves validated container changes through the caller’s transaction. */
   async update(
     id: string,
     data: { name?: string; visibility?: Visibility; archivedAt?: Date },
@@ -95,6 +103,7 @@ export class HierarchyService {
     return db.container.update({ where: { id }, data });
   }
 
+  /** Repositions siblings only when every live sibling is supplied exactly once. */
   async reorder(workspaceId: string, parentId: string | null, ids: string[], db: DomainDb) {
     const siblings = await db.container.findMany({
       where: { workspaceId, parentContainerId: parentId, archivedAt: null },
@@ -109,6 +118,7 @@ export class HierarchyService {
       await db.container.update({ where: { id: ids[index] }, data: { position: index + 1 } });
   }
 
+  /** Finds all list paths, including archived branches, for configuration safety checks. */
   async retainedListPaths(workspaceId: string, db: DomainDb) {
     const nodes = await db.container.findMany({ where: { workspaceId } });
     const byId = new Map(nodes.map((node) => [node.id, node]));

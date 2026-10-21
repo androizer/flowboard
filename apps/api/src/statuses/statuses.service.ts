@@ -3,10 +3,12 @@ import { Container, StatusCategory } from '@prisma/client';
 import { DomainDb } from '../hierarchy/hierarchy.service';
 import { PrismaService } from '../persistence/prisma.service';
 
+/** Owns local status menus and inheritance along a container path. */
 @Injectable()
 export class StatusesService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** Loads the status set defined at this owner, if one exists. */
   async local(workspaceId: string, ownerContainerId: string | null, db: DomainDb = this.prisma) {
     return db.statusSet.findFirst({
       where: { workspaceId, ownerContainerId },
@@ -14,6 +16,7 @@ export class StatusesService {
     });
   }
 
+  /** Validates a complete ordered status menu, including unique keys and all three categories. */
   candidate(value: unknown) {
     if (!Array.isArray(value) || value.length < 3)
       throw new BadRequestException('statuses must be a complete array.');
@@ -48,6 +51,7 @@ export class StatusesService {
     return rows;
   }
 
+  /** Saves a local menu while keeping IDs for status keys that still exist. */
   async put(
     workspaceId: string,
     ownerContainerId: string | null,
@@ -77,11 +81,13 @@ export class StatusesService {
     return this.local(workspaceId, ownerContainerId, db);
   }
 
+  /** Removes a local menu so its descendants inherit the next available set. */
   async reset(workspaceId: string, ownerContainerId: string, db: DomainDb) {
     const set = await this.local(workspaceId, ownerContainerId, db);
     if (set) await db.statusSet.delete({ where: { id: set.id } });
   }
 
+  /** Chooses the nearest status set on the path, falling back to the workspace set. */
   async resolve(workspaceId: string, path: Container[], db: DomainDb = this.prisma) {
     const ids = path.map((node) => node.id);
     const sets = await db.statusSet.findMany({
@@ -112,6 +118,7 @@ export class StatusesService {
     };
   }
 
+  /** Accepts only a status key in the list’s effective menu. */
   validate(statusKey: unknown, statuses: Array<{ key: string }>) {
     if (typeof statusKey !== 'string' || !statuses.some((status) => status.key === statusKey))
       throw new BadRequestException('Status is not valid for this list.');

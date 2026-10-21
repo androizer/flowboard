@@ -8,12 +8,15 @@ import { PrismaService } from '../persistence/prisma.service';
 
 type SessionTokens = { accessToken: string; refreshToken: string; refreshExpiresAt: Date };
 
+/** Owns local sign-in and Flowboard sessions for workspace members. */
 @Injectable()
 export class AuthService {
   constructor(private readonly prisma: PrismaService) {}
+  /** Reads the current token settings, including the signing secret. */
   private settings() {
     return config();
   }
+  /** Issues a short-lived access token tied to one user and session. */
   private sign(userId: string, sessionId: string, expiresAt: Date) {
     const s = this.settings();
     const seconds = Math.max(
@@ -29,6 +32,7 @@ export class AuthService {
       expiresIn: seconds,
     });
   }
+  /** Checks local credentials and active membership, then opens a Flowboard session. */
   async login(loginIdentifier: string, password: string): Promise<SessionTokens> {
     const normalized = loginIdentifier.trim().toLowerCase();
     const credential = await this.prisma.userCredential.findUnique({
@@ -51,6 +55,7 @@ export class AuthService {
     if (!membership) throw new ForbiddenException('No active workspace membership.');
     return this.createSession(credential.userId, local.id);
   }
+  /** Stores a session and hashed refresh token, then returns the raw token once. */
   private async createSession(userId: string, authIdentityId: string): Promise<SessionTokens> {
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     const refreshToken = createRefreshSecret();
@@ -66,6 +71,7 @@ export class AuthService {
       refreshExpiresAt: expiresAt,
     };
   }
+  /** Rotates a refresh token within its session. A reused token revokes the whole session, including when refreshes race. */
   async refresh(rawToken: string): Promise<SessionTokens> {
     const tokenHash = hashRefresh(rawToken);
     const now = new Date();
@@ -138,18 +144,21 @@ export class AuthService {
     if (outcome.replayed) throw new UnauthorizedException('Refresh session is unavailable.');
     return outcome.tokens;
   }
+  /** Revokes one session so its access and refresh tokens stop working. */
   async logout(sessionId: string) {
     await this.prisma.authSession.updateMany({
       where: { id: sessionId, revokedAt: null },
       data: { revokedAt: new Date() },
     });
   }
+  /** Revokes every active session owned by the user. */
   async logoutAll(userId: string) {
     await this.prisma.authSession.updateMany({
       where: { userId, revokedAt: null },
       data: { revokedAt: new Date() },
     });
   }
+  /** Lists active people in a workspace for member and assignee pickers. */
   async members(workspaceId: string, offset: number, limit: number) {
     const where = { workspaceId, isActive: true, user: { isActive: true } };
     const [total, rows] = await Promise.all([
@@ -167,6 +176,7 @@ export class AuthService {
       page: { offset, limit, total, hasMore: offset + limit < total },
     };
   }
+  /** Reloads active membership inside a write transaction so a changed role takes effect. */
   async freshActor(actor: { userId: string; workspaceId: string }, db: Prisma.TransactionClient) {
     const membership = await db.workspaceMembership.findUnique({
       where: { workspaceId_userId: { workspaceId: actor.workspaceId, userId: actor.userId } },
@@ -176,12 +186,14 @@ export class AuthService {
       throw new ForbiddenException('Membership is inactive.');
     return { userId: actor.userId, workspaceId: actor.workspaceId, role: membership.role };
   }
+  /** Keeps only IDs belonging to active users with active workspace membership. */
   async eligibleAssigneeIds(workspaceId: string, ids: string[], db: Prisma.TransactionClient) {
     const rows = await db.workspaceMembership.findMany({
       where: { workspaceId, userId: { in: ids }, isActive: true, user: { isActive: true } },
     });
     return rows.map((row) => row.userId);
   }
+  /** Verifies the access token, its session, and current membership before returning the caller. */
   async actor(accessToken: string) {
     let decoded: jwt.JwtPayload;
     try {

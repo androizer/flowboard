@@ -9,14 +9,17 @@ const taskInclude = {
 } as const;
 export type StoredTask = Prisma.TaskGetPayload<{ include: typeof taskInclude }>;
 
+/** Stores tasks and their ordering, assignees, and field answers. */
 @Injectable()
 export class TasksService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** Loads a task with its assignees and custom field answers. */
   get(id: string, db: DomainDb = this.prisma) {
     return db.task.findUnique({ where: { id }, include: taskInclude });
   }
 
+  /** Lists live tasks in one list, ordered by position. */
   async list(listId: string, db: DomainDb = this.prisma) {
     return db.task.findMany({
       where: { primaryListId: listId, archivedAt: null },
@@ -25,6 +28,7 @@ export class TasksService {
     });
   }
 
+  /** Loads tasks in selected lists, including archived tasks for config safety checks. */
   async retained(workspaceId: string, listIds: string[], db: DomainDb) {
     if (!listIds.length) return [];
     return db.task.findMany({
@@ -33,6 +37,7 @@ export class TasksService {
     });
   }
 
+  /** Counts visible-list tasks and finds upcoming due dates within the supplied window. */
   async overview(workspaceId: string, listIds: string[], now: Date, through: Date, db: DomainDb) {
     if (!listIds.length)
       return {
@@ -58,6 +63,7 @@ export class TasksService {
     };
   }
 
+  /** Shapes a stored task into the public task response. */
   project(task: StoredTask) {
     return {
       id: task.id,
@@ -79,6 +85,7 @@ export class TasksService {
     };
   }
 
+  /** Finds the next position at the end of a list’s status column. */
   async nextPosition(listId: string, statusKey: string, db: DomainDb) {
     const last = await db.task.findFirst({
       where: { primaryListId: listId, statusKey, archivedAt: null },
@@ -87,6 +94,7 @@ export class TasksService {
     return last ? last.position.toNumber() + 1 : 1;
   }
 
+  /** Stores a new task, assignees, and field answers in one write. */
   async create(
     args: {
       workspaceId: string;
@@ -129,6 +137,7 @@ export class TasksService {
     });
   }
 
+  /** Replaces a task’s assignees and answers and increments its version. */
   async update(
     task: StoredTask,
     args: {
@@ -172,6 +181,7 @@ export class TasksService {
     });
   }
 
+  /** Places a task in a column and compacts both affected columns. Returns null for an invalid anchor. */
   async place(
     task: StoredTask,
     listId: string,
@@ -218,6 +228,7 @@ export class TasksService {
     return index + 1;
   }
 
+  /** Soft-archives a task and closes gaps in its former column. */
   async archive(task: StoredTask, db: DomainDb) {
     await db.task.update({
       where: { id: task.id },

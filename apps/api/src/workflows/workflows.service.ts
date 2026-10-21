@@ -16,6 +16,7 @@ import { StoredTask, TasksService } from '../tasks/tasks.service';
 
 type Input = Record<string, unknown>;
 
+/** Coordinates access, effective config, and cross-domain writes in one transaction. */
 @Injectable()
 export class WorkflowsService {
   constructor(
@@ -28,23 +29,27 @@ export class WorkflowsService {
     private readonly tasks: TasksService,
   ) {}
 
+  /** Loads the effective statuses and fields for one container path. */
   private async resolved(workspaceId: string, path: Container[], db: DomainDb) {
     const status = await this.statuses.resolve(workspaceId, path, db);
     const fields = await this.fields.resolve(workspaceId, path, db);
     return { ...status, ...fields };
   }
 
+  /** Requires a plain JSON object before reading request fields. */
   private object(value: unknown): Input {
     if (!value || typeof value !== 'object' || Array.isArray(value))
       throw new BadRequestException('Expected a JSON object.');
     return value as Input;
   }
 
+  /** Rejects request properties outside this operation’s accepted shape. */
   private only(input: Input, keys: string[]) {
     for (const key of Object.keys(input))
       if (!keys.includes(key)) throw new BadRequestException(`Unknown field: ${key}.`);
   }
 
+  /** Rejects a stale task version before applying a change. */
   private version(value: unknown, task: StoredTask) {
     if (!Number.isInteger(value) || (value as number) < 1)
       throw new BadRequestException('expectedVersion is required.');
@@ -52,23 +57,27 @@ export class WorkflowsService {
       throw new ConflictException('Task has changed. Reload and try again.');
   }
 
+  /** Locks the workspace row and reloads the caller’s role to serialize writes. */
   private async lock(actor: DomainActor, db: DomainDb) {
     await db.$queryRaw`SELECT id FROM workspaces WHERE id = ${actor.workspaceId}::uuid FOR UPDATE`;
     return this.auth.freshActor(actor, db);
   }
 
+  /** Uses the write lock, then requires current admin membership. */
   private async admin(actor: DomainActor, db: DomainDb) {
     const fresh = await this.lock(actor, db);
     this.permissions.assertAdmin(fresh);
     return fresh;
   }
 
+  /** Accepts and trims a nonempty name within the length limit. */
   private name(value: unknown) {
     if (typeof value !== 'string' || !value.trim() || value.trim().length > 200)
       throw new BadRequestException('name must contain 1–200 characters.');
     return value.trim();
   }
 
+  /** Checks that offset and page size are within supported limits. */
   private page(offset: number, limit: number) {
     if (
       !Number.isInteger(offset) ||
@@ -80,6 +89,7 @@ export class WorkflowsService {
       throw new BadRequestException('Invalid pagination.');
   }
 
+  /** Checks an ID’s UUID shape before using it in a workflow. */
   private uuid(value: unknown, field: string) {
     if (
       typeof value !== 'string' ||
@@ -89,6 +99,7 @@ export class WorkflowsService {
     return value;
   }
 
+  /** Shapes a stored container for API responses. */
   private containerView(node: Container) {
     return {
       id: node.id,
@@ -102,11 +113,13 @@ export class WorkflowsService {
     };
   }
 
+  /** Returns only the workspace belonging to the caller. */
   async workspace(actor: DomainActor, id: string) {
     if (id !== actor.workspaceId) throw new NotFoundException('Workspace is unavailable.');
     return this.hierarchy.workspace(id);
   }
 
+  /** Validates and renames the caller’s workspace as an admin write. */
   async renameWorkspace(actor: DomainActor, id: string, body: unknown) {
     const input = this.object(body);
     this.only(input, ['name']);
@@ -118,6 +131,7 @@ export class WorkflowsService {
     });
   }
 
+  /** Pages through containers the caller can access. */
   async containers(actor: DomainActor, offset: number, limit: number) {
     this.page(offset, limit);
     const items = await this.permissions.filteredTree(actor);
@@ -127,12 +141,14 @@ export class WorkflowsService {
     };
   }
 
+  /** Returns a container after checking its full path. */
   async container(actor: DomainActor, id: string) {
     const path = await this.hierarchy.path(actor.workspaceId, id);
     await this.permissions.assertPath(actor, path);
     return this.containerView(path.at(-1)!);
   }
 
+  /** Creates a container under the permitted space → folder → list hierarchy. */
   async createContainer(actor: DomainActor, body: unknown) {
     const input = this.object(body);
     this.only(input, ['parentId', 'type', 'name', 'visibility']);
@@ -176,6 +192,7 @@ export class WorkflowsService {
     });
   }
 
+  /** Changes a live container’s name or visibility as an admin write. */
   async updateContainer(actor: DomainActor, id: string, body: unknown) {
     const input = this.object(body);
     this.only(input, ['name', 'visibility']);
@@ -196,6 +213,7 @@ export class WorkflowsService {
     });
   }
 
+  /** Archives a live container; descendants remain retained for safety checks. */
   async archiveContainer(actor: DomainActor, id: string) {
     return this.prisma.$transaction(async (db) => {
       await this.admin(actor, db);
@@ -204,6 +222,7 @@ export class WorkflowsService {
     });
   }
 
+  /** Reorders all live siblings under one parent as an admin write. */
   async reorderContainers(actor: DomainActor, body: unknown) {
     const input = this.object(body);
     this.only(input, ['parentId', 'ids']);
@@ -224,6 +243,7 @@ export class WorkflowsService {
     });
   }
 
+  /** Shows direct access rules on a live container to an admin. */
   async grants(actor: DomainActor, id: string) {
     this.permissions.assertAdmin(actor);
     await this.hierarchy.path(actor.workspaceId, id);
@@ -235,6 +255,7 @@ export class WorkflowsService {
     };
   }
 
+  /** Sets a direct rule for an active workspace member on a live container. */
   async putGrant(actor: DomainActor, id: string, userId: string, body: unknown) {
     const input = this.object(body);
     this.only(input, ['mode']);
@@ -250,6 +271,7 @@ export class WorkflowsService {
     });
   }
 
+  /** Removes a direct container rule as an admin write. */
   async deleteGrant(actor: DomainActor, id: string, userId: string) {
     return this.prisma.$transaction(async (db) => {
       await this.admin(actor, db);
@@ -258,6 +280,7 @@ export class WorkflowsService {
     });
   }
 
+  /** Shows the local menu and the menu this owner would inherit. */
   async statusSet(actor: DomainActor, ownerId: string | null) {
     if (ownerId) {
       const path = await this.hierarchy.path(actor.workspaceId, ownerId);
@@ -273,6 +296,7 @@ export class WorkflowsService {
     return { local: await this.statuses.local(actor.workspaceId, null), inherited: null };
   }
 
+  /** Finds retained lists that use an owner’s menu; nearer overrides shield descendants. */
   private async statusAffected(workspaceId: string, ownerId: string | null, db: DomainDb) {
     const paths = await this.hierarchy.retainedListPaths(workspaceId, db);
     const affected: string[] = [];
@@ -291,6 +315,7 @@ export class WorkflowsService {
     return affected;
   }
 
+  /** Saves a menu only if every affected retained task keeps a valid status key. */
   async putStatusSet(actor: DomainActor, ownerId: string | null, body: unknown) {
     const input = this.object(body);
     this.only(input, ['statuses']);
@@ -310,6 +335,7 @@ export class WorkflowsService {
     });
   }
 
+  /** Restores inherited statuses only if affected retained tasks still fit that menu. */
   async resetStatusSet(actor: DomainActor, ownerId: string) {
     return this.prisma.$transaction(async (db) => {
       await this.admin(actor, db);
@@ -327,6 +353,7 @@ export class WorkflowsService {
     });
   }
 
+  /** Pages through fields defined on an accessible container. */
   async localFields(actor: DomainActor, ownerId: string, offset: number, limit: number) {
     this.page(offset, limit);
     const path = await this.hierarchy.path(actor.workspaceId, ownerId);
@@ -334,6 +361,7 @@ export class WorkflowsService {
     return this.fields.local(actor.workspaceId, ownerId, offset, limit);
   }
 
+  /** Finds retained tasks below a field owner, including archived branches. */
   private async fieldTasks(workspaceId: string, ownerId: string, db: DomainDb) {
     const paths = await this.hierarchy.retainedListPaths(workspaceId, db);
     return this.tasks.retained(
@@ -345,6 +373,7 @@ export class WorkflowsService {
     );
   }
 
+  /** Adds a unique field; a new required field cannot strand existing tasks. */
   async createField(actor: DomainActor, ownerId: string, body: unknown) {
     const candidate = this.fields.candidate(body);
     return this.prisma.$transaction(async (db) => {
@@ -360,6 +389,7 @@ export class WorkflowsService {
     });
   }
 
+  /** Changes a field only when retained answers still fit its type, options, and required rule. */
   async updateField(actor: DomainActor, id: string, body: unknown) {
     return this.prisma.$transaction(async (db) => {
       await this.admin(actor, db);
@@ -398,6 +428,7 @@ export class WorkflowsService {
     });
   }
 
+  /** Deletes a field only when no retained task still answers it. */
   async deleteField(actor: DomainActor, id: string) {
     return this.prisma.$transaction(async (db) => {
       await this.admin(actor, db);
@@ -411,6 +442,7 @@ export class WorkflowsService {
     });
   }
 
+  /** Reorders every field owned by one container as an admin write. */
   async reorderFields(actor: DomainActor, ownerId: string, body: unknown) {
     const input = this.object(body);
     this.only(input, ['ids']);
@@ -424,6 +456,7 @@ export class WorkflowsService {
     });
   }
 
+  /** Loads a live task only after checking access to its actual list. */
   private async task(actor: DomainActor, id: string, db: DomainDb) {
     const task = await this.tasks.get(id, db);
     if (!task || task.workspaceId !== actor.workspaceId || task.archivedAt)
@@ -432,12 +465,14 @@ export class WorkflowsService {
     return task;
   }
 
+  /** Maps stored custom field answers back to field keys. */
   private values(task: StoredTask | null) {
     return Object.fromEntries(
       (task?.fieldValues ?? []).map((item) => [item.definition.key, item.value]),
     ) as Input;
   }
 
+  /** Merges submitted answers; null explicitly clears an answer. */
   private patchValues(current: Input, patch: unknown) {
     if (patch === undefined) return current;
     const next = { ...current };
@@ -448,6 +483,7 @@ export class WorkflowsService {
     return next;
   }
 
+  /** Converts keyed answers into rows tied to field definition IDs. */
   private answerRows(values: Input, fields: Array<{ id: string; key: string }>) {
     return fields
       .filter((field) => values[field.key] !== undefined && values[field.key] !== null)
@@ -457,6 +493,7 @@ export class WorkflowsService {
       }));
   }
 
+  /** Keeps existing assignees when omitted; otherwise requires distinct active members. */
   private async assignees(actor: DomainActor, value: unknown, fallback: string[], db: DomainDb) {
     if (value === undefined) return fallback;
     if (
@@ -472,6 +509,7 @@ export class WorkflowsService {
     return value as string[];
   }
 
+  /** Validates task title, description, priority, and due date with current values as defaults. */
   private builtins(input: Input, task: StoredTask | null) {
     const title = input.title === undefined ? task?.title : input.title;
     if (typeof title !== 'string' || !title.trim() || title.trim().length > 500)
@@ -498,6 +536,7 @@ export class WorkflowsService {
     return { title: title.trim(), description, priority: priority as Priority, dueDate };
   }
 
+  /** Returns the hierarchy visible to the caller. */
   async tree(actor: DomainActor) {
     const nodes = await this.permissions.filteredTree(actor);
     return {
@@ -513,6 +552,7 @@ export class WorkflowsService {
     };
   }
 
+  /** Builds counts and due-date summaries from accessible lists in one read snapshot. */
   async overview(actor: DomainActor, workspaceId: string) {
     if (workspaceId !== actor.workspaceId) throw new NotFoundException('Workspace is unavailable.');
     const now = new Date();
@@ -574,6 +614,7 @@ export class WorkflowsService {
     );
   }
 
+  /** Loads a list’s effective config and ordered tasks in one read snapshot. */
   async board(actor: DomainActor, listId: string, offset = 0, limit = 50) {
     if (
       !Number.isInteger(offset) ||
@@ -612,10 +653,12 @@ export class WorkflowsService {
     );
   }
 
+  /** Returns one accessible live task in the public response shape. */
   async detail(actor: DomainActor, id: string) {
     return this.tasks.project(await this.task(actor, id, this.prisma));
   }
 
+  /** Creates a task after checking current access, status, fields, and assignees in one transaction. */
   async create(actor: DomainActor, listId: string, body: unknown) {
     const input = this.object(body);
     this.only(input, [
@@ -652,6 +695,7 @@ export class WorkflowsService {
     });
   }
 
+  /** Updates a task against its version and current list rules in one transaction. */
   async update(actor: DomainActor, id: string, body: unknown) {
     const input = this.object(body);
     this.only(input, [
@@ -704,6 +748,7 @@ export class WorkflowsService {
     });
   }
 
+  /** Moves a task within its list or status columns, checking its version and anchor. */
   async placement(actor: DomainActor, id: string, body: unknown) {
     const input = this.object(body);
     this.only(input, ['expectedVersion', 'statusKey', 'beforeTaskId']);
@@ -744,6 +789,7 @@ export class WorkflowsService {
     });
   }
 
+  /** Moves a task between accessible lists. Source-only answers need an explicit clear. */
   async move(actor: DomainActor, id: string, body: unknown) {
     const input = this.object(body);
     this.only(input, [
@@ -819,6 +865,7 @@ export class WorkflowsService {
     });
   }
 
+  /** Archives a task after checking access and its expected version. */
   async archive(actor: DomainActor, id: string, expectedVersion: number) {
     return this.prisma.$transaction(async (db) => {
       const fresh = await this.lock(actor, db);

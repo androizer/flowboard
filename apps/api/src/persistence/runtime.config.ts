@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 
+/** Reads runtime settings and requires a signing secret of at least 32 bytes. */
 export const config = () => {
   const file = process.env.JWT_SECRET_FILE;
   const secret =
@@ -16,6 +17,8 @@ export const config = () => {
   };
 };
 
+/** Hashes a refresh token before storage or lookup; the raw token stays with the client. */
 export const hashRefresh = (value: string) =>
   crypto.createHash('sha256').update(value).digest('hex');
+/** Creates a random refresh token for a new session or rotation. */
 export const createRefreshSecret = () => crypto.randomBytes(32).toString('base64url');

@@ -5,10 +5,12 @@ import { PrismaService } from '../persistence/prisma.service';
 
 export type ResolvedField = Prisma.CustomFieldDefinitionGetPayload<{ include: { options: true } }>;
 
+/** Owns custom field definitions, inherited fields, and answer validation. */
 @Injectable()
 export class CustomFieldsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** Treats blank text and empty multi-select values as missing, but keeps zero and false. */
   isAnswered(type: FieldType, value: unknown) {
     return !(
       value === undefined ||
@@ -18,6 +20,7 @@ export class CustomFieldsService {
     );
   }
 
+  /** Pages through fields defined directly on one container. */
   async local(
     workspaceId: string,
     ownerContainerId: string,
@@ -39,6 +42,7 @@ export class CustomFieldsService {
     return { items, page: { offset, limit, total, hasMore: offset + limit < total } };
   }
 
+  /** Loads one workspace field with its ordered options. */
   async get(workspaceId: string, id: string, db: DomainDb) {
     return db.customFieldDefinition.findFirst({
       where: { workspaceId, id },
@@ -46,12 +50,14 @@ export class CustomFieldsService {
     });
   }
 
+  /** Checks whether a field key is already used in this workspace. */
   async findByKey(workspaceId: string, key: string, db: DomainDb) {
     return db.customFieldDefinition.findUnique({
       where: { workspaceId_key: { workspaceId, key } },
     });
   }
 
+  /** Validates a field definition; updates keep its key and can reuse existing option IDs. */
   candidate(value: unknown, previous?: ResolvedField) {
     if (!value || typeof value !== 'object' || Array.isArray(value))
       throw new BadRequestException('Invalid field definition.');
@@ -118,6 +124,7 @@ export class CustomFieldsService {
     return { key, name: name.trim(), type: type as FieldType, required, options };
   }
 
+  /** Appends a local field and creates its ordered options. */
   async create(
     workspaceId: string,
     ownerContainerId: string,
@@ -149,6 +156,7 @@ export class CustomFieldsService {
     });
   }
 
+  /** Saves a field and its options, preserving retained option IDs. */
   async update(id: string, candidate: ReturnType<CustomFieldsService['candidate']>, db: DomainDb) {
     const retained = candidate.options
       .map((option) => option.id)
@@ -179,10 +187,12 @@ export class CustomFieldsService {
     });
   }
 
+  /** Removes a field after the workflow has checked retained task values. */
   async delete(id: string, db: DomainDb) {
     await db.customFieldDefinition.delete({ where: { id } });
   }
 
+  /** Repositions local fields only when every local field is supplied once. */
   async reorder(workspaceId: string, ownerContainerId: string, ids: string[], db: DomainDb) {
     const rows = await db.customFieldDefinition.findMany({
       where: { workspaceId, ownerContainerId },
@@ -200,6 +210,7 @@ export class CustomFieldsService {
       });
   }
 
+  /** Combines fields from the container path in ancestor-to-descendant order. */
   async resolve(workspaceId: string, path: Container[], db: DomainDb = this.prisma) {
     const ids = path.map((node) => node.id);
     const definitions = await db.customFieldDefinition.findMany({
@@ -230,6 +241,7 @@ export class CustomFieldsService {
     };
   }
 
+  /** Checks task answers against the effective field types, options, and required rules. */
   validate(values: Record<string, unknown>, fields: ResolvedField[]) {
     const byKey = new Map(fields.map((field) => [field.key, field]));
     for (const key of Object.keys(values))
