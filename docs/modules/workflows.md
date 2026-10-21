@@ -1,6 +1,6 @@
 # Module: application workflows
 
-Status: planned. Code owner: `libs/api/workflows`. Navigation: [hub](../README.md), [architecture](../architecture.md), [ADR-0005](../adr/0005-delivery-and-consistency.md).
+Status: Day 2 tree/overview/board/task workflows implemented; configuration and container administration remain planned. Code owner: `apps/api/src/workflows`. Navigation: [hub](../README.md), [architecture](../architecture.md), [ADR-0005](../adr/0005-delivery-and-consistency.md).
 
 ## 1. Purpose and example
 
@@ -38,15 +38,17 @@ The API guard establishes identity. A domain workflow then resolves the stored r
 
 Domain HTTP handlers call workflows. Workflows return transport-safe projections/errors through [API/contracts](api-contracts.md). Identity routes stay in identity. All allowed imports are explicit in [architecture](../architecture.md).
 
-| Workflow                           | Result                                                                           |
-| ---------------------------------- | -------------------------------------------------------------------------------- |
-| Load tree/board/list/detail        | Authorized projection only, with the relevant resolved config.                   |
-| Create/update/archive/reorder task | One validated task mutation with version and placement updates.                  |
-| Move task                          | One source/destination/config/value/placement mutation.                          |
-| Change status/field configuration  | Candidate checked against all affected retained tasks, then applied or rejected. |
-| Administer containers/grants       | Authorized structural/access change under the same lock.                         |
+| Workflow                             | Result                                                                           |
+| ------------------------------------ | -------------------------------------------------------------------------------- |
+| Load tree/overview/board/list/detail | Authorized projection only, with the relevant resolved config where applicable.  |
+| Create/update/archive/reorder task   | One validated task mutation with version and placement updates.                  |
+| Move task                            | One source/destination/config/value/placement mutation.                          |
+| Change status/field configuration    | Candidate checked against all affected retained tasks, then applied or rejected. |
+| Administer containers/grants         | Authorized structural/access change under the same lock.                         |
 
 Board responses contain a complete resolved status/field configuration plus a task page. The web client loads all pages for the small selected-list dataset. Each page is internally consistent; if later pages reveal incompatible config or failed validation, discard/refetch rather than combine contradictory data. We do not claim one database snapshot persists across separate HTTP requests.
+
+The overview read starts one repeatable-read snapshot, obtains the permission-filtered active tree, passes only its list IDs to Tasks, and combines per-list counts with the five nearest future-due task summaries. Tasks owns the underlying task queries. A mismatched workspace ID is unavailable. The snapshot prevents a count from contradicting the list/item data within one response; later navigation fetches fresh data.
 
 ## 4. Workflows and sequence diagrams
 
@@ -159,16 +161,17 @@ Status impact skips descendants protected by a lower status override. Field impa
 
 Create read/task workflows in Day 2 and config/admin workflows in Day 3. Controllers, curl, and future channels all use these same workflows. Implement tests on Day 4.
 
-| ID      | Test TODO: setup/action -> expected result                                                                                    |
-| ------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| FLOW-01 | Board load -> authorize before returning columns/fields/tasks; consistent single-response snapshot.                           |
-| FLOW-02 | Move lacks compatible status, required value, or explicit clear -> reject and preserve source task/answers/order/version.     |
-| FLOW-03 | Complete move corrections -> one commit, same ID, valid destination, preserved assignments/shared values.                     |
-| FLOW-04 | Source/destination inaccessible or archived -> no data leak/mutation.                                                         |
-| FLOW-05 | Config delete/reset/required change -> checks all retained affected tasks, respects lower overrides, no partial config write. |
-| FLOW-06 | Task/config or task/grant race -> serial workspace order, no stale-validation commit.                                         |
-| FLOW-07 | Task version stale -> 409; unrelated auth refresh does not require workspace lock.                                            |
-| FLOW-08 | Failure injected between owned writes -> rollback every change.                                                               |
-| FLOW-09 | Separate board pages straddle config change -> client refetches rather than assumes a cross-request snapshot.                 |
+| ID      | Test TODO: setup/action -> expected result                                                                                                             |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| FLOW-01 | Board load -> authorize before returning columns/fields/tasks; consistent single-response snapshot.                                                    |
+| FLOW-02 | Move lacks compatible status, required value, or explicit clear -> reject and preserve source task/answers/order/version.                              |
+| FLOW-03 | Complete move corrections -> one commit, same ID, valid destination, preserved assignments/shared values.                                              |
+| FLOW-04 | Source/destination inaccessible or archived -> no data leak/mutation.                                                                                  |
+| FLOW-05 | Config delete/reset/required change -> checks all retained affected tasks, respects lower overrides, no partial config write.                          |
+| FLOW-06 | Task/config or task/grant race -> serial workspace order, no stale-validation commit.                                                                  |
+| FLOW-07 | Task version stale -> 409; unrelated auth refresh does not require workspace lock.                                                                     |
+| FLOW-08 | Failure injected between owned writes -> rollback every change.                                                                                        |
+| FLOW-09 | Separate board pages straddle config change -> client refetches rather than assumes a cross-request snapshot.                                          |
+| FLOW-10 | Overview for Alice/Bob/Carol -> only each actor's accessible active lists and tasks contribute; one response has consistent counts and upcoming order. |
 
 When changing a workflow, update the order diagram, transaction boundary, owner interfaces, HTTP contract, and failure example together. Do not move cross-domain validation into a task or config repository to simplify a controller.

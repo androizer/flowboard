@@ -1,6 +1,6 @@
 # Module: statuses
 
-Status: planned. Code owner: `libs/api/statuses`. Navigation: [hub](../README.md), [ADR-0003](../adr/0003-scoped-configuration.md), [workflows](workflows.md).
+Status: Day 2 effective-list resolution and task validation implemented; configuration mutations/safety remain planned. Code owner: `apps/api/src/statuses`. Navigation: [hub](../README.md), [ADR-0003](../adr/0003-scoped-configuration.md), [workflows](workflows.md).
 
 ## 1. Purpose and example
 

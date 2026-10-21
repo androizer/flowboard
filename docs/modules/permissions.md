@@ -1,6 +1,6 @@
 # Module: permissions
 
-Status: planned. Code owner: `libs/api/permissions`. Navigation: [hub](../README.md), [ADR-0002](../adr/0002-hierarchy-and-access.md), [hierarchy](hierarchy.md).
+Status: Day 2 tree, list, and task access enforcement implemented; grant administration remains planned. Code owner: `apps/api/src/permissions`. Navigation: [hub](../README.md), [ADR-0002](../adr/0002-hierarchy-and-access.md), [hierarchy](hierarchy.md).
 
 ## 1. Purpose and example
 
@@ -56,7 +56,7 @@ Public nodes require active membership and no denied ancestor. An inherited allo
 
 Keep raw grant rows and blocking path details private from ordinary member error messages. A forbidden response must not list inaccessible sibling/container names. Admin config screens may show their own grant data.
 
-The tree keeps accessible containers even if no visible children remain. It does not insert placeholders for private branches or promote children whose parents are hidden. Existing inaccessible resources return 403; missing/archived resources return 404 according to hierarchy rules.
+The tree keeps accessible containers even if no visible children remain. It does not insert placeholders for private branches or promote children whose parents are hidden. The Work overview receives its list scope from this same filtered tree inside one read snapshot; private-list counts and task titles cannot leak through summary totals. Existing inaccessible resources return 403; missing/archived resources return 404 according to hierarchy rules.
 
 ## 4. Workflows and sequence diagrams
 
@@ -139,17 +139,17 @@ Changing a container's public/private flag follows the hierarchy admin transacti
 
 Build the backend policy with hierarchy in Days 1-2, apply it to every workflow before UI completion, and add admin grant controls in Day 3. Do not defer enforcement until after task APIs exist.
 
-| ID      | Test TODO: setup/action -> expected result                                         |
-| ------- | ---------------------------------------------------------------------------------- |
-| PERM-01 | Alice active admin -> all active branches and task edits/admin actions accessible. |
-| PERM-02 | Bob opens tree -> private Strategy hidden; Security allow respected.               |
-| PERM-03 | Carol opens tree -> Roadmap visible through allowed Strategy; Delivery denied.     |
-| PERM-04 | Deny on parent and allow on child -> still 403; no child promoted into tree.       |
-| PERM-05 | Private parent without allow, allow only on child -> parent blocks access.         |
-| PERM-06 | Guessed task URL -> stored list's permissions enforced.                            |
-| PERM-07 | Assigned task in inaccessible list -> assignment does not make it visible.         |
-| PERM-08 | Inactive admin membership -> no bypass; reject.                                    |
-| PERM-09 | Member config/container/grant write -> 403 even if list accessible.                |
-| PERM-10 | Move with either side inaccessible -> no mutation; no destination schema leak.     |
+| ID      | Test TODO: setup/action -> expected result                                                            |
+| ------- | ----------------------------------------------------------------------------------------------------- |
+| PERM-01 | Alice active admin -> all active branches and task edits/admin actions accessible.                    |
+| PERM-02 | Bob opens tree and overview -> private Strategy and its task counts hidden; Security allow respected. |
+| PERM-03 | Carol opens tree -> Roadmap visible through allowed Strategy; Delivery denied.                        |
+| PERM-04 | Deny on parent and allow on child -> still 403; no child promoted into tree.                          |
+| PERM-05 | Private parent without allow, allow only on child -> parent blocks access.                            |
+| PERM-06 | Guessed task URL -> stored list's permissions enforced.                                               |
+| PERM-07 | Assigned task in inaccessible list -> assignment does not make it visible.                            |
+| PERM-08 | Inactive admin membership -> no bypass; reject.                                                       |
+| PERM-09 | Member config/container/grant write -> 403 even if list accessible.                                   |
+| PERM-10 | Move with either side inaccessible -> no mutation; no destination schema leak.                        |
 
 Changing precedence or edit rights requires [ADR-0002](../adr/0002-hierarchy-and-access.md), the tree/direct-access examples, and all read/write workflow call sites to change together. Do not implement different permission algorithms per screen.

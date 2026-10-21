@@ -1,6 +1,6 @@
 # Module: custom fields
 
-Status: planned. Code owner: `libs/api/custom-fields`. Navigation: [hub](../README.md), [ADR-0003](../adr/0003-scoped-configuration.md), [tasks](tasks.md), [workflows](workflows.md).
+Status: Day 2 effective-list resolution, typed answer validation, and task values implemented; configuration mutations/safety remain planned. Code owner: `apps/api/src/custom-fields`. Navigation: [hub](../README.md), [ADR-0003](../adr/0003-scoped-configuration.md), [tasks](tasks.md), [workflows](workflows.md).
 
 ## 1. Purpose and example
 

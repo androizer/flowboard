@@ -1,6 +1,6 @@
 # Module: hierarchy
 
-Status: Day 1 persistence and authenticated tree foundation implemented; hierarchy administration and full permission filtering remain planned. Code owner: `apps/api/src/hierarchy`. Navigation: [hub](../README.md), [ADR-0002](../adr/0002-hierarchy-and-access.md), [complete ER](../er-diagram.md).
+Status: Day 1 persistence and Day 2 permission-filtered tree implemented; hierarchy administration remains planned. Code owner: `apps/api/src/hierarchy`. Navigation: [hub](../README.md), [ADR-0002](../adr/0002-hierarchy-and-access.md), [complete ER](../er-diagram.md).
 
 ## 1. Purpose and example
 
@@ -76,7 +76,7 @@ Sibling order is scoped to one parent (spaces use the workspace as the sibling g
 
 Expose read-only ancestry/descendant queries and transaction-aware owned writes. The public normal-read path rejects archived ancestors. A separate internal safety query can inspect retained archived branches when checking configuration usage. It does not become a public archive browsing API.
 
-Permission filtering belongs to permissions/workflows. Hierarchy cannot promise that a raw tree query is safe to return to a member. Admin writes are authorized by the workflow before mutation.
+Permission filtering belongs to permissions/workflows. Hierarchy's active tree omits archived nodes and descendants with an archived ancestor; it cannot promise that a raw tree query is safe to return to a member. Admin writes are authorized by the workflow before mutation.
 
 ## 4. Workflows and sequence diagrams
 

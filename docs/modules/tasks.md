@@ -1,6 +1,6 @@
 # Module: tasks
 
-Status: planned. Code owner: `libs/api/tasks`. Navigation: [hub](../README.md), [workflows](workflows.md), [fields](custom-fields.md), [statuses](statuses.md).
+Status: Day 2 reads, create/edit/archive, placement, move, answers, and assignments implemented; Day 3 UI completion and Day 4 tests remain planned. Code owner: `apps/api/src/tasks`. Navigation: [hub](../README.md), [workflows](workflows.md), [fields](custom-fields.md), [statuses](statuses.md).
 
 ## 1. Purpose and example
 
@@ -74,13 +74,14 @@ Tasks archive rather than physically delete. Parent-container archival also hide
 
 ## 3. Connections and interfaces
 
-| Caller                                | Capability                                                                                                                    |
-| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| Workflows                             | Read stored task/list/version, create/update/archive, placement/move writes, assignee/value replacement within a transaction. |
-| Config safety workflow                | Query all retained status/field/option usage in supplied list scopes, without filtering out archived tasks.                   |
-| Board/list workflow                   | Paginated task projections and built-in sort; include assignees/value data in bounded queries.                                |
-| Identity via workflows                | Supply validated eligible assignee IDs.                                                                                       |
-| Status/field validation via workflows | Supply validated destination key and definition-ID values; task service does not read config tables.                          |
+| Caller                                | Capability                                                                                                                                                   |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Workflows                             | Read stored task/list/version, create/update/archive, placement/move writes, assignee/value replacement within a transaction.                                |
+| Config safety workflow                | Query all retained status/field/option usage in supplied list scopes, without filtering out archived tasks.                                                  |
+| Board/list workflow                   | Paginated task projections and built-in sort; include assignees/value data in bounded queries.                                                               |
+| Overview workflow                     | Count active tasks by authorized list IDs and return only bounded future-due summaries; caller supplies accessible list scope, Tasks does not decide access. |
+| Identity via workflows                | Supply validated eligible assignee IDs.                                                                                                                      |
+| Status/field validation via workflows | Supply validated destination key and definition-ID values; task service does not read config tables.                                                         |
 
 Task writes are internal application capabilities for workflows, not a permission-free public HTTP API. Keep task controllers behind workflows. Task service imports neither permissions nor status/field services, preventing circular ownership.
 
@@ -153,17 +154,18 @@ Archive checks current version/access and marks the task archived, removes it fr
 
 Build the task repository/use cases and form/query integration in Day 2. Finish move/placement UX and sorting in Day 3. Built-in list sorting is due date or priority, with stable ID tie-breaking. Default board order is configured status order then task position/ID; null due dates sort last, and priority order is urgent -> high -> normal -> low -> none.
 
-| ID      | Test TODO: setup/action -> expected result                                               |
-| ------- | ---------------------------------------------------------------------------------------- |
-| TASK-01 | Valid create -> one task/list, version 1, valid assignments/values.                      |
-| TASK-02 | Blank/over-500 title, invalid enum/date, inactive/foreign assignee -> 400.               |
-| TASK-03 | Attempt direct folder/space task placement -> reject.                                    |
-| TASK-04 | Update omits value vs explicit null -> preserve vs clear per field validation.           |
-| TASK-05 | Stale expectedVersion -> 409, no partial task/answer writes.                             |
-| TASK-06 | Status change/reorder -> correct column and persisted dense placement; no list change.   |
-| TASK-07 | Foreign/mismatched/self anchor -> reject; empty-column append works.                     |
-| TASK-08 | Archive -> hidden normally, retained references still found by config checks.            |
-| TASK-09 | Paginated/sorted results -> stable ties, null due dates last, documented priority order. |
-| TASK-10 | Internal member/provider migration -> task IDs/assignees/creator remain stable.          |
+| ID      | Test TODO: setup/action -> expected result                                                                                                  |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| TASK-01 | Valid create -> one task/list, version 1, valid assignments/values.                                                                         |
+| TASK-02 | Blank/over-500 title, invalid enum/date, inactive/foreign assignee -> 400.                                                                  |
+| TASK-03 | Attempt direct folder/space task placement -> reject.                                                                                       |
+| TASK-04 | Update omits value vs explicit null -> preserve vs clear per field validation.                                                              |
+| TASK-05 | Stale expectedVersion -> 409, no partial task/answer writes.                                                                                |
+| TASK-06 | Status change/reorder -> correct column and persisted dense placement; no list change.                                                      |
+| TASK-07 | Foreign/mismatched/self anchor -> reject; empty-column append works.                                                                        |
+| TASK-08 | Archive -> hidden normally, retained references still found by config checks.                                                               |
+| TASK-09 | Paginated/sorted results -> stable ties, null due dates last, documented priority order.                                                    |
+| TASK-10 | Internal member/provider migration -> task IDs/assignees/creator remain stable.                                                             |
+| TASK-11 | Authorized list-scope overview -> active counts, seven-day due-soon count, and five future-due summaries are correctly bounded and ordered. |
 
 For changes, update task contracts and [workflows](workflows.md) first if authorization/config/atomicity is affected. New task fields need persistence, drawer/table projections, examples, and TODOs together. Do not add a task-to-global-status FK that bypasses scoped resolution.

@@ -117,6 +117,38 @@ export class AuthService {
       data: { revokedAt: new Date() },
     });
   }
+  async members(workspaceId: string, offset: number, limit: number) {
+    const where = { workspaceId, isActive: true, user: { isActive: true } };
+    const [total, rows] = await Promise.all([
+      this.prisma.workspaceMembership.count({ where }),
+      this.prisma.workspaceMembership.findMany({
+        where,
+        include: { user: true },
+        orderBy: { userId: 'asc' },
+        skip: offset,
+        take: limit,
+      }),
+    ]);
+    return {
+      items: rows.map((row) => ({ id: row.userId, name: row.user.displayName })),
+      page: { offset, limit, total, hasMore: offset + limit < total },
+    };
+  }
+  async freshActor(actor: { userId: string; workspaceId: string }, db: Prisma.TransactionClient) {
+    const membership = await db.workspaceMembership.findUnique({
+      where: { workspaceId_userId: { workspaceId: actor.workspaceId, userId: actor.userId } },
+      include: { user: true },
+    });
+    if (!membership?.isActive || !membership.user.isActive)
+      throw new ForbiddenException('Membership is inactive.');
+    return { userId: actor.userId, workspaceId: actor.workspaceId, role: membership.role };
+  }
+  async eligibleAssigneeIds(workspaceId: string, ids: string[], db: Prisma.TransactionClient) {
+    const rows = await db.workspaceMembership.findMany({
+      where: { workspaceId, userId: { in: ids }, isActive: true, user: { isActive: true } },
+    });
+    return rows.map((row) => row.userId);
+  }
   async actor(accessToken: string) {
     let decoded: jwt.JwtPayload;
     try {

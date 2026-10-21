@@ -6,7 +6,7 @@ Navigation: [hub](README.md), [architecture](architecture.md), [requirements](re
 
 Use the hub's module table. For example, a new select-field rule belongs to custom fields; moving a task between lists belongs to workflows; a JWT/session rule belongs to identity. If several owners are affected, list all of them before changing a public contract.
 
-All current guides describe planned behavior. Mark a behavior implemented only after its code and relevant verification exist. Do not infer implementation status from a diagram or a finished document.
+Guides distinguish implemented Day 1–2 behavior from planned Day 3–4 behavior. Mark a behavior implemented only after its code and relevant verification exist. Do not infer implementation status from a diagram or a finished document.
 
 ## 2. Make the decision concrete
 

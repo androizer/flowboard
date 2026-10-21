@@ -9,3 +9,16 @@
 - Changed clean-seed local login identifiers from short usernames to email-shaped identifiers. This preserves the accepted user-owned credential model and does not treat an email as a provider identity link.
 - Corrected the initial USERS schema to include created_at and updated_at audit timestamps. The user requested that this belong in the initial migration rather than an incremental migration; the identity ER source and Prisma model were updated together.
 - Clarified the future SSO migration: USER_CREDENTIALS can be retired without deleting USERS or AUTH_IDENTITIES, but the local email-shaped login identifier is otherwise lost. Add/backfill a user-owned primary_email as profile/migration data before credential retirement, while provider identities remain explicitly verified and linked by issuer/subject rather than email.
+
+## 2026-10-21 — Day 2 implementation
+
+- Corrected the Day 1 `GET /v1/tree` gap: its old handler returned every active container to members while the UI labeled the result server-filtered. Removed that handler and routed tree reads through ancestor-aware permissions; Bob and Carol now receive different trees and denied direct list/task reads return 403.
+- Implemented task/status/field workflows behind the same `/v1` HTTP boundary for the web client and curl. Invalid custom values and incomplete cross-list move corrections are rejected without partial writes; task versions reject stale edits.
+- Changed the first task-detail design after user feedback: Board cards open a wider modal, while Table rows open a right-side drawer. Backlog was the temporary landing until the user selected Work overview.
+- Replaced that landing after the user selected the Work overview design. The first visual proposal had fixed seed counts; the implementation uses a permission-filtered, single-snapshot read contract so Alice, Bob, and Carol see their own live counts and due items.
+- Kept incoming/outgoing webhooks as future channel designs. They require separate sender/event contracts and authentication; no webhook endpoint or worker was generated for Day 2.
+- Deferred executable application tests per the chosen Day 4 schedule. Day 2 verification used type checks, builds, documentation validation, and manual API/browser checks against an isolated Docker stack.
+
+## 2026-10-21 — Tooling integration
+
+- Added Nx-inferred ESLint tasks and Prettier commands. Corrected the initial setup by aligning `@nx/eslint` and `@nx/eslint-plugin` to the lockfile-resolved Nx 20.8.4 version; the Nx documentation requires matching versions.

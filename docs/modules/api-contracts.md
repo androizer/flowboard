@@ -1,10 +1,10 @@
 # Module: API and contracts
 
-Status: planned. Code owners: `libs/shared/contracts` and NestJS HTTP adapters. Navigation: [hub](../README.md), [ADR-0005](../adr/0005-delivery-and-consistency.md), [workflows](workflows.md).
+Status: Day 2 tree, workspace overview, board, resolved configuration, user lookup, and task HTTP routes implemented; admin routes and complete Swagger/cookbook remain planned. Code owners: `libs/shared/contracts` and NestJS HTTP adapters. Navigation: [hub](../README.md), [ADR-0005](../adr/0005-delivery-and-consistency.md), [workflows](workflows.md).
 
 ## 1. Purpose and example
 
-The API is the common language used by the React website and the curl cookbook. Both channels must get the same permission checks, validation, and errors. This guide owns route names and common HTTP shapes so individual screens cannot invent a second API.
+The API is the common language used by the React website and a lightweight curl cookbook. A future thin CLI can call those same routes. Both channels must get the same permission checks, validation, and errors. This guide owns route names and common HTTP shapes so individual screens cannot invent a second API.
 
 For example, moving Fix login sends a destination list, desired corrections, and the task version. The server resolves the task's actual source and all business rules. A request cannot declare itself admin or supply an Actor.
 
@@ -48,29 +48,46 @@ Successful creation returns 201; reads and state-returning updates return 200; a
 
 ### Route catalog
 
-| Routes                                                                              | Owner/use case                                                                                                                             |
-| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| POST `/v1/auth/login`, `/v1/auth/refresh`, `/v1/auth/logout`, `/v1/auth/logout-all` | Identity verifies/renews/revokes with the cookie and Origin rules in its guide.                                                            |
-| GET `/v1/me`, `/v1/users`                                                           | Identity's safe current-user/member projections; collection pagination for users.                                                          |
-| GET `/v1/tree`                                                                      | Tree workflow returns one bounded, permission-filtered active hierarchy snapshot.                                                          |
-| GET/PATCH `/v1/workspaces/:id`                                                      | Read/rename the single root; admin required to rename; no second-workspace creation endpoint.                                              |
-| GET/POST `/v1/containers`, GET/PATCH/DELETE `/v1/containers/:id`                    | Filtered container collection/create and authorized read/rename/visibility/archive workflows. Creation includes logical parentId and type. |
-| POST `/v1/containers/reorder`                                                       | Admin supplies parentId and complete ordered sibling IDs; cannot change parents.                                                           |
-| GET/POST `/v1/lists/:id/tasks`                                                      | Paginated/sorted task list and task create.                                                                                                |
-| GET/PATCH/DELETE `/v1/tasks/:id`                                                    | Task detail/update/archive; archive supplies expectedVersion query parameter.                                                              |
-| POST `/v1/tasks/:id/placement`                                                      | Change status/placement inside stored list, with expectedVersion and optional beforeTaskId.                                                |
-| POST `/v1/tasks/:id/move`                                                           | Atomic cross-list move with destinationListId, corrections, expectedVersion, optional beforeTaskId.                                        |
-| GET `/v1/lists/:id/board`                                                           | Complete resolved configuration plus paginated task projection.                                                                            |
-| GET `/v1/lists/:id/resolved-statuses`, `/v1/lists/:id/resolved-fields`              | Authorized effective configuration, order, and source ownership.                                                                           |
-| GET/PUT/DELETE `/v1/containers/:id/status-set`                                      | Read local set/inherited preview, replace full local set, or reset to inheritance. PUT covers status add/edit/remove/reorder atomically.   |
-| GET/PUT `/v1/workspaces/:id/status-set`                                             | Read/edit workspace default; no deletion of the required fallback.                                                                         |
-| GET/POST `/v1/containers/:id/fields`, PATCH/DELETE `/v1/fields/:id`                 | Local definition collection/create/edit/remove; option edits are nested in the field candidate.                                            |
-| POST `/v1/containers/:id/fields/reorder`                                            | Reorder that owner's definitions, not inherited definitions.                                                                               |
-| GET `/v1/containers/:id/grants`, PUT/DELETE `/v1/containers/:id/grants/:userId`     | Admin reads rules, upserts allow/deny, or removes an explicit rule.                                                                        |
+| Routes                                                                              | Owner/use case                                                                                                                                                                                                                                                            |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST `/v1/auth/login`, `/v1/auth/refresh`, `/v1/auth/logout`, `/v1/auth/logout-all` | Identity verifies/renews/revokes with the cookie and Origin rules in its guide.                                                                                                                                                                                           |
+| GET `/v1/me`, `/v1/users`                                                           | Identity's safe current-user/member projections; collection pagination for users.                                                                                                                                                                                         |
+| GET `/v1/tree`                                                                      | Tree workflow returns one bounded, permission-filtered active hierarchy snapshot.                                                                                                                                                                                         |
+| GET `/v1/workspaces/:id/overview`                                                   | Current workspace only: one permission-filtered read snapshot of active visible task/list counts, seven-day due-soon count, and five nearest future-due tasks. No pagination because only five upcoming tasks are returned; list rows cover every accessible active list. |
+| GET/PATCH `/v1/workspaces/:id`                                                      | Read/rename the single root; admin required to rename; no second-workspace creation endpoint.                                                                                                                                                                             |
+| GET/POST `/v1/containers`, GET/PATCH/DELETE `/v1/containers/:id`                    | Filtered container collection/create and authorized read/rename/visibility/archive workflows. Creation includes logical parentId and type.                                                                                                                                |
+| POST `/v1/containers/reorder`                                                       | Admin supplies parentId and complete ordered sibling IDs; cannot change parents.                                                                                                                                                                                          |
+| GET/POST `/v1/lists/:id/tasks`                                                      | Paginated/sorted task list and task create.                                                                                                                                                                                                                               |
+| GET/PATCH/DELETE `/v1/tasks/:id`                                                    | Task detail/update/archive; archive supplies expectedVersion query parameter.                                                                                                                                                                                             |
+| POST `/v1/tasks/:id/placement`                                                      | Change status/placement inside stored list, with expectedVersion and optional beforeTaskId.                                                                                                                                                                               |
+| POST `/v1/tasks/:id/move`                                                           | Atomic cross-list move with destinationListId, corrections, expectedVersion, optional beforeTaskId.                                                                                                                                                                       |
+| GET `/v1/lists/:id/board`                                                           | Complete resolved configuration plus paginated task projection.                                                                                                                                                                                                           |
+| GET `/v1/lists/:id/resolved-statuses`, `/v1/lists/:id/resolved-fields`              | Authorized effective configuration, order, and source ownership.                                                                                                                                                                                                          |
+| GET/PUT/DELETE `/v1/containers/:id/status-set`                                      | Read local set/inherited preview, replace full local set, or reset to inheritance. PUT covers status add/edit/remove/reorder atomically.                                                                                                                                  |
+| GET/PUT `/v1/workspaces/:id/status-set`                                             | Read/edit workspace default; no deletion of the required fallback.                                                                                                                                                                                                        |
+| GET/POST `/v1/containers/:id/fields`, PATCH/DELETE `/v1/fields/:id`                 | Local definition collection/create/edit/remove; option edits are nested in the field candidate.                                                                                                                                                                           |
+| POST `/v1/containers/:id/fields/reorder`                                            | Reorder that owner's definitions, not inherited definitions.                                                                                                                                                                                                              |
+| GET `/v1/containers/:id/grants`, PUT/DELETE `/v1/containers/:id/grants/:userId`     | Admin reads rules, upserts allow/deny, or removes an explicit rule.                                                                                                                                                                                                       |
 
 Config/grant/container mutations are admin-only and use workflows. Removing unused definitions/options/grants/assignment/value rows is intentional; never cascade-delete task history. A nonexistent local set reads as local=null with inherited preview. Resetting a local set is subject to retained-task safety checks. Per-owner definition collections are paginated; resolved schema/set payloads are complete configuration snapshots.
 
 Shared contracts declare request/response types, enums, pagination/error/Actor-related common types without runtime provider or ORM dependencies. Nest DTOs implement transport validation; dynamic schema validation remains in custom fields/statuses. The web imports contracts and calls HTTP, never backend functions.
+
+### Secondary client boundary
+
+The Day 2 task/board endpoints must be usable without the React application: a client signs in through `/v1/auth/login`, sends the returned Flowboard access token as a Bearer token, and reads or mutates the same `/v1` resources as the web UI. The curl cookbook is the MVP's lightweight secondary client proof, completed with the running routes in Day 3. A future CLI is an HTTP client only; it must not import NestJS/domain repositories, bypass workflows, or require CLI-specific business endpoints.
+
+For refresh and logout, a non-browser client can retain the issued refresh cookie in a cookie jar and send the configured allowed Origin on cookie-sensitive auth requests, following the existing identity contract. It receives the same status codes and error envelope as the browser. This is a client transport detail, not a separate credential or session model. The shared contracts and Swagger examples should describe the HTTP exchange without assuming React component state.
+
+### Future webhook boundary
+
+A webhook can be another integration channel, but it is not automatically another `/v1` user client. An incoming webhook would need its own versioned payload contract and sender verification at the HTTP edge. The adapter would resolve an authorized internal principal and translate the request into an existing workflow; it must not create tasks through a repository or trust a claimed user/role in the payload. Whether the sender acts as a user or a distinct integration identity needs an explicit identity and permission design before any endpoint is added.
+
+An outgoing webhook would publish a separate, versioned event contract after a domain change commits. It needs delivery, signature, retry, and failure semantics before implementation; it must not expose private task data merely because an event occurred. Neither webhook direction is scheduled for Days 2-4. The shared REST types remain for web/curl/future CLI; webhook payloads will share stable domain identifiers and semantics where appropriate, not UI state or REST response envelopes.
+
+UI-only state includes the selected tree node, board/table toggle, open drawer, drag preview, form draft, and pending indicators. Access decisions, effective statuses/fields, task validation, versions, and writes remain server-side so every authorized channel observes the same result.
+
+The overview is a reusable read contract for web, curl, and a future CLI. Its `totals` include `visibleTasks`, `accessibleLists`, and `dueSoon`; `dueSoonWindow` gives the UTC start and exclusive end used for the count. `lists` carry each visible list's path and active task count. `upcoming` carries task ID, title, list ID, and due datetime only. It excludes archived tasks, inaccessible lists, and overdue tasks. The server orders upcoming items by due datetime and task ID; it never exposes private-list counts through aggregate totals. UI navigation and the chosen default screen stay with the web client.
 
 ## 4. Workflows and sequence diagrams
 
@@ -124,15 +141,16 @@ The cookbook demonstrates login with an allowed Origin and cookie jar, capture/u
 
 Define shared types/error conventions in Day 1, domain routes/Swagger with workflows in Days 2-3, and verify browser/cookbook parity in Day 4. UI-only behavior includes drawer state, selection, and pending indicators; permission, inheritance, and validation behavior remains shared on the server.
 
-| ID     | Test TODO: setup/action -> expected result                                                     |
-| ------ | ---------------------------------------------------------------------------------------------- |
-| API-01 | Browser and cookbook perform same action -> same permission/validation behavior.               |
-| API-02 | Invalid DTO, UUID, unknown/protected field -> standard 400 without trusting body role/user.    |
-| API-03 | All error classes -> correct status and single envelope.                                       |
-| API-04 | Collection pagination/default/max/ties -> stable documented shape and ordering.                |
-| API-05 | Task expectedVersion omitted/stale -> 400/409; no partial update.                              |
-| API-06 | Swagger/runtime route/security mismatch -> fail final verification.                            |
-| API-07 | Public health/docs -> no domain secrets/data; domain route without JWT -> 401.                 |
-| API-08 | Local vs inherited config and reset endpoints -> correct complete snapshots and safety policy. |
+| ID     | Test TODO: setup/action -> expected result                                                                                                                 |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| API-01 | Browser and cookbook perform the same login, read, and task edit -> same auth, permission, validation, and response behavior; no web-only domain endpoint. |
+| API-02 | Invalid DTO, UUID, unknown/protected field -> standard 400 without trusting body role/user.                                                                |
+| API-03 | All error classes -> correct status and single envelope.                                                                                                   |
+| API-04 | Collection pagination/default/max/ties -> stable documented shape and ordering.                                                                            |
+| API-05 | Task expectedVersion omitted/stale -> 400/409; no partial update.                                                                                          |
+| API-06 | Swagger/runtime route/security mismatch -> fail final verification.                                                                                        |
+| API-07 | Public health/docs -> no domain secrets/data; domain route without JWT -> 401.                                                                             |
+| API-08 | Local vs inherited config and reset endpoints -> correct complete snapshots and safety policy.                                                             |
+| API-09 | Overview requested as another workspace or by a member with private lists -> 404 or correctly filtered counts/items; same contract usable by curl.         |
 
 When changing an endpoint, update this route catalog, owner guide, shared DTOs, Swagger, web caller/cookbook, and acceptance cases in the same change. Keep endpoint changes out of repository implementation details.

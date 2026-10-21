@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   ForbiddenException,
@@ -6,6 +7,7 @@ import {
   Headers,
   HttpCode,
   Post,
+  Query,
   Req,
   Res,
   UnauthorizedException,
@@ -91,5 +93,22 @@ export class AuthController {
     @CurrentActor() actor: { userId: string; workspaceId: string; role: string },
   ) {
     return actor;
+  }
+  @UseGuards(AccessGuard) @Get('users') users(
+    @CurrentActor() actor: { workspaceId: string },
+    @Query('offset') rawOffset?: string,
+    @Query('limit') rawLimit?: string,
+  ) {
+    const offset = rawOffset === undefined ? 0 : Number(rawOffset);
+    const limit = rawLimit === undefined ? 50 : Number(rawLimit);
+    if (
+      !Number.isInteger(offset) ||
+      offset < 0 ||
+      !Number.isInteger(limit) ||
+      limit < 1 ||
+      limit > 100
+    )
+      throw new BadRequestException('Invalid pagination.');
+    return this.auth.members(actor.workspaceId, offset, limit);
   }
 }

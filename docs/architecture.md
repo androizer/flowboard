@@ -12,7 +12,7 @@ The application runs as three services: a React website, one NestJS API, and Pos
 flowchart TD
     Browser["Browser: React and AntD"] --> Proxy["Frontend server and same-origin proxy"]
     Proxy --> HTTP["NestJS HTTP boundary"]
-    Cookbook["curl cookbook"] --> HTTP
+    Cookbook["curl cookbook / future thin CLI"] --> HTTP
     HTTP --> Identity["Identity: authenticate and resolve Actor"]
     Identity --> Workflows["Application workflows"]
     Workflows --> Permissions["Permissions"]
@@ -81,6 +81,19 @@ The following graph is the planned import policy, not a diagram of database join
 
 The API root wires infrastructure and controllers. Domain controllers delegate to application workflows. Identity owns its own authentication endpoints. A task/config write must not bypass a workflow by invoking a repository directly. Workflows use identity to refresh an Actor inside a write transaction; identity never imports workflows.
 
+The web UI is the primary client. A curl cookbook is the lightweight second channel for the MVP; a thin CLI may replace or wrap those requests later. Both channels use the same `/v1` routes, Flowboard authentication, request/response contracts, permission checks, and workflows. Domain behavior must not depend on React state, browser headers, or a web-only controller. The future CLI needs only an HTTP adapter for sign-in, cookie handling, Bearer requests, and output formatting; it does not need a second set of domain APIs or repositories. No CLI executable is part of Day 2.
+
+### Channel boundaries
+
+| Channel                                        | Contract and authentication                                                                                                                                                                                                                                | Channel-owned behavior                                                                                   |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Web UI, primary                                | Calls `/v1` with Flowboard access JWT and browser refresh cookie; server resolves the Actor and permissions.                                                                                                                                               | Navigation, selected list, board/table toggle, drawer, drag interaction, loading and error presentation. |
+| Curl cookbook, MVP secondary; thin CLI, future | Calls the same `/v1` routes with the same Flowboard login, Bearer token, validation, and error contracts; a cookie jar can carry refresh.                                                                                                                  | Command arguments and output formatting; no domain rules or repository access.                           |
+| Incoming webhook, future                       | A separately versioned webhook payload and verified sender must map to an explicitly authorized internal principal before invoking the same application workflows. It does not inherit a user's browser session or become a shortcut around access checks. | Transport verification and payload translation; no task/config business rules.                           |
+| Outgoing webhook, future                       | A versioned event payload would describe committed changes; signing, delivery, retry, and failure policy need a separate design. It does not use the `/v1` request/response DTO as its event contract.                                                     | Delivery to subscribers; no browser UI state.                                                            |
+
+Webhook direction, identity mapping, event schemas, and delivery guarantees require a separately scoped design before implementation. There are no webhook endpoints, subscriptions, or delivery workers in the MVP. The shared boundary is domain behavior and authorization inside workflows; transport and presentation stay with each channel.
+
 Frontend features may depend on contracts and their own UI helpers. They cannot import backend libraries. External auth SDK imports are restricted to identity. Nx project tags, module-boundary lint rules, public entry points, and cycle checks enforce the policy when code is added.
 
 ## 4. Boundaries during common actions
@@ -88,6 +101,7 @@ Frontend features may depend on contracts and their own UI helpers. They cannot 
 | Action             | Route through the system                                                                                        |
 | ------------------ | --------------------------------------------------------------------------------------------------------------- |
 | Login              | Web -> identity verifier -> shared session/token service -> response                                            |
+| Load Work overview | HTTP auth -> workflow -> filtered hierarchy/permissions -> task-owned aggregate queries in one read snapshot    |
 | Load a board       | HTTP auth -> workflows -> hierarchy/permissions -> status/field resolvers -> task query                         |
 | Drag a card        | HTTP auth -> workspace transaction -> fresh membership/access/config -> task placement write                    |
 | Move between lists | Same transaction checks source/destination, destination status/fields, then task/values/order writes            |
