@@ -15,9 +15,8 @@ COPY package.json yarn.lock* ./
 COPY apps/api/package.json apps/api/package.json
 COPY apps/api/prisma/schema.prisma apps/api/prisma/schema.prisma
 COPY apps/web/package.json apps/web/package.json
-# Prisma and tsx are production dependencies because migration and the idempotent
-# seed execute at API container startup. Build tools (Nest CLI, Nx, Vite, tsc)
-# remain in the builder stage only.
+# Prisma runs migrations at every API startup; tsx runs the idempotent seed
+# only in demo mode. Build tools (Nest CLI, Nx, Vite, tsc) remain in the builder stage.
 RUN yarn install --production=true --frozen-lockfile && yarn cache clean
 
 FROM node:22-alpine AS runtime
@@ -31,4 +30,4 @@ COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/apps/api/package.json ./apps/api/package.json
 COPY --from=build /app/apps/api/prisma ./apps/api/prisma
 COPY --from=build /app/scripts ./scripts
-CMD ["sh", "-c", "node scripts/init-signing-secret.js && cd apps/api && ../../node_modules/.bin/prisma migrate deploy && ../../node_modules/.bin/tsx prisma/seed.ts && node dist/main.js"]
+CMD ["sh", "scripts/start-api.sh"]

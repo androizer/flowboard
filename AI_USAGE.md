@@ -32,3 +32,7 @@
 
 - Corrected the Day 1 database gap where single-column foreign keys allowed cross-workspace references and non-list task placement. Added composite workspace/type keys, strict hierarchy and task-list checks, and a migration that stops on inconsistent existing rows instead of silently changing relationships.
 - Kept effective status, inherited custom-field, access, and archive checks in their owning workflows. Prisma required the optional one-to-one status-set owner to use a composite unique key; updated the schema and migration together.
+
+## 2026-10-21 — API startup correction
+
+- Corrected the Docker startup path after verification found that unconditional demo seeding stopped non-demo API startup. The startup script now applies migrations on every launch, runs the idempotent seed only when `FLOWBOARD_DEMO_MODE=true`, and then starts the API.

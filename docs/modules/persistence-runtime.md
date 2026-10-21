@@ -40,9 +40,9 @@ Use checked-in Prisma migrations and SQL for partial indexes/constraints that ne
 | Board workflow      | Repeatable-read transaction for one response's config/tasks/assignments/values snapshot.                            |
 | Identity refresh    | Separate transaction; lock session then token, atomically consume/create or commit revocation.                      |
 | Domain repositories | Same transaction-bound Prisma client through infrastructure; no independent transaction inside a coordinated write. |
-| Bootstrap           | Database readiness -> migrations -> seed -> API readiness.                                                          |
+| Bootstrap           | Database readiness -> migrations -> demo seed when enabled -> API readiness.                                        |
 
-Local Compose has one API/bootstrap instance; run its initialization sequentially before listening. Production horizontal deployment would move migrations/seed to one release job before starting replicas. Do not claim that scaling Compose API replicas makes concurrent bootstrap safe automatically.
+Local Compose has one API/bootstrap instance; run its initialization sequentially before listening. The startup script always applies migrations and runs the idempotent seed only when `FLOWBOARD_DEMO_MODE=true`; non-demo startup proceeds directly to the API. Production horizontal deployment would move migrations to one release job before starting replicas. Do not claim that scaling Compose API replicas makes concurrent bootstrap safe automatically.
 
 Indexes cover credentials and issuer/subject lookup, session/user/expiry, refresh hash/session/parent, grant member/resource, container parent/order, task list/status/position, due date, and config owner. Task field values also index `(field_definition_id, workspace_id)` for FK maintenance. Add other custom-value indexes only when an actual filter query exists; custom-field filters are not scheduled.
 
@@ -56,8 +56,10 @@ flowchart TD
     Build --> DB["PostgreSQL health check"]
     DB --> Keys["Initialize/read local signing secret"]
     Keys --> Migration["Apply committed migrations"]
-    Migration --> Seed["Apply missing seed version transactionally"]
-    Seed --> Ready["API ready; frontend serves UI"]
+    Migration --> Demo{"Demo mode?"}
+    Demo -->|Yes| Seed["Apply missing seed version transactionally"]
+    Demo -->|No| Ready["API ready; frontend serves UI"]
+    Seed --> Ready
     Migration -->|Failure| Stop["Fail visibly; do not report ready"]
 ```
 
@@ -73,8 +75,10 @@ sequenceDiagram
     Compose->>Boot: Start API container
     Boot->>Boot: Load/create local secret without printing it
     Boot->>DB: Apply migrations
-    Boot->>DB: Check seed marker; seed only if missing
-    DB-->>Boot: Commit
+    alt Demo mode enabled
+        Boot->>DB: Check seed marker; seed only if missing
+        DB-->>Boot: Commit
+    end
     Boot->>API: Start and expose readiness
     Web->>API: Proxy authenticated browser requests
 ```
@@ -122,11 +126,11 @@ Build Compose, schema/constraints, signing bootstrap, and seed in Day 1; share t
 | ------ | ---------------------------------------------------------------------------------------------------------------------------- |
 | RUN-01 | Clean machine with Docker only -> one command reaches ready and seeded UI.                                                   |
 | RUN-02 | Restart after edits -> data and signing secret persist; no duplicate seed or password overwrite.                             |
-| RUN-03 | Migration/seed failure -> no misleading readiness; seed transaction does not partially commit.                               |
+| RUN-03 | Migration or enabled demo-seed failure -> no misleading readiness; seed transaction does not partially commit.              |
 | RUN-04 | Composite-FK/type/unique violations -> same-workspace/user/session, strict parent, and task-list constraints enforced by DB. |
 | RUN-05 | Multi-owner write fails midway -> all task/config data rolls back.                                                           |
 | RUN-06 | Refresh replay -> revocation survives HTTP 401, unlike an ordinary rolled-back error.                                        |
-| RUN-07 | Production missing keys or demo-seed enabled -> fail closed; no secret in logs/artifacts.                                    |
+| RUN-07 | Non-demo startup skips seed; production missing keys or demo-seed enabled -> fail closed; no secret in logs/artifacts.        |
 | RUN-08 | Board response under config write -> internally consistent snapshot; no cross-request snapshot promise.                      |
 | RUN-09 | Final test command -> PostgreSQL-backed backend tests and browser tests run without host tooling.                            |
 
