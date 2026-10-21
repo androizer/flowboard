@@ -89,10 +89,10 @@ export class AuthController {
     await this.auth.logoutAll(actor.userId);
     this.clearRefresh(res);
   }
-  @UseGuards(AccessGuard) @Get('me') me(
-    @CurrentActor() actor: { userId: string; workspaceId: string; role: string },
+  @UseGuards(AccessGuard) @Get('me') async me(
+    @CurrentActor() actor: { userId: string; workspaceId: string; role: 'admin' | 'member' },
   ) {
-    return actor;
+    return this.auth.currentUser(actor);
   }
   @UseGuards(AccessGuard) @Get('users') users(
     @CurrentActor() actor: { workspaceId: string },

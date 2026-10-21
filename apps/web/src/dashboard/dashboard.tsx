@@ -8,8 +8,10 @@ import {
 } from '@ant-design/icons';
 import {
   Alert,
+  Avatar,
   Breadcrumb,
   Button,
+  Dropdown,
   Empty,
   Segmented,
   Skeleton,
@@ -312,10 +314,40 @@ export function Dashboard({
           <AppstoreOutlined /> Flowboard
         </div>
         <div className="workspace-account">
-          <Tag color={actor.role === 'admin' ? 'blue' : 'default'}>{actor.role}</Tag>
-          <Button icon={<LogoutOutlined />} onClick={() => void onSignOut()}>
-            Sign out
-          </Button>
+          <Dropdown
+            trigger={['click']}
+            placement="bottomRight"
+            menu={{
+              items: [
+                {
+                  key: 'sign-out',
+                  icon: <LogoutOutlined />,
+                  label: 'Sign Out',
+                  onClick: () => void onSignOut(),
+                },
+              ],
+            }}
+            popupRender={(menu) => (
+              <div className="account-dropdown">
+                <div className="account-dropdown-identity">
+                  <div className="account-dropdown-greeting">Hi {actor.displayName}</div>
+                  <div className="account-dropdown-role">{actor.role}</div>
+                  <div className="account-dropdown-email">{actor.email ?? 'Email unavailable'}</div>
+                </div>
+                {menu}
+              </div>
+            )}
+          >
+            <button
+              type="button"
+              className="account-avatar-trigger"
+              aria-label={`Account menu for ${actor.displayName}`}
+            >
+              <Avatar className="account-avatar">
+                {actor.displayName.trim().charAt(0).toUpperCase()}
+              </Avatar>
+            </button>
+          </Dropdown>
         </div>
       </header>
       <div className="workspace-body">

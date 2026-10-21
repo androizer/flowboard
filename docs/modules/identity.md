@@ -134,6 +134,8 @@ type Actor = {
 
 HTTP endpoints are defined in [API/contracts](api-contracts.md). Only identity handles login, refresh, logout, logout-all, me, and member-user projections. Never expose password hashes, identity-provider secrets, token hashes, or refresh history in user responses.
 
+`GET /v1/me` returns the active actor IDs/role plus the user's `displayName` and a nullable `email` for the account menu. In the local MVP, `email` comes from the user-owned login identifier only when it is email-form; a username-only or future SSO-only account returns `null` until a separately verified email is available. The menu must not infer an email from an identity-provider token or show another member's account details.
+
 ## 4. Workflows and sequence diagrams
 
 ### Local and future SSO convergence

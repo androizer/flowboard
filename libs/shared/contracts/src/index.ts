@@ -1,4 +1,5 @@
 export type Actor = { userId: string; workspaceId: string; role: 'admin' | 'member' };
+export type CurrentUser = Actor & { displayName: string; email: string | null };
 export type ErrorEnvelope = {
   error: { code: string; message: string; details?: Array<{ path: string; reason: string }> };
 };

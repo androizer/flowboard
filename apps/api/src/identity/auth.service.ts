@@ -186,6 +186,22 @@ export class AuthService {
       throw new ForbiddenException('Membership is inactive.');
     return { userId: actor.userId, workspaceId: actor.workspaceId, role: membership.role };
   }
+  /** Returns only the signed-in person's safe account details for the web shell. */
+  async currentUser(actor: { userId: string; workspaceId: string; role: MembershipRole }) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: actor.userId },
+      select: { displayName: true, credential: { select: { loginIdentifier: true } } },
+    });
+    if (!user) throw new UnauthorizedException('Current user is unavailable.');
+    const identifier = user.credential?.loginIdentifier;
+    return {
+      userId: actor.userId,
+      workspaceId: actor.workspaceId,
+      role: actor.role,
+      displayName: user.displayName,
+      email: identifier?.includes('@') ? identifier : null,
+    };
+  }
   /** Keeps only IDs belonging to active users with active workspace membership. */
   async eligibleAssigneeIds(workspaceId: string, ids: string[], db: Prisma.TransactionClient) {
     const rows = await db.workspaceMembership.findMany({

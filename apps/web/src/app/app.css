@@ -58,7 +58,53 @@ body {
 .workspace-account {
   align-items: center;
   display: flex;
-  gap: 12px;
+}
+.account-avatar-trigger {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  padding: 3px;
+}
+.account-avatar-trigger:hover {
+  background: #eaf2ff;
+}
+.account-avatar-trigger:focus-visible {
+  outline: 2px solid #1677ff;
+  outline-offset: 2px;
+}
+.account-avatar {
+  background: #1677ff;
+  font-weight: 700;
+}
+.account-dropdown {
+  background: #fff;
+  border: 1px solid #e8ebf0;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 12%);
+  min-width: 220px;
+  padding: 8px 0;
+}
+.account-dropdown-identity {
+  border-bottom: 1px solid #e8ebf0;
+  padding: 8px 14px 12px;
+}
+.account-dropdown-greeting {
+  color: #23304a;
+  font-weight: 650;
+}
+.account-dropdown-role {
+  color: #64748b;
+  margin-top: 6px;
+  text-transform: capitalize;
+}
+.account-dropdown-email {
+  color: #64748b;
+  margin-top: 2px;
+  overflow-wrap: anywhere;
 }
 .workspace-body {
   display: grid;

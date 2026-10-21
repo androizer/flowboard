@@ -40,7 +40,7 @@ AUTH_COLUMNS = {
     "REFRESH_TOKENS": {"id", "session_id", "parent_token_id", "token_hash", "created_at", "expires_at", "consumed_at"},
     "WORKSPACES": {"id", "name"},
 }
-EXPECTED_CASES = {"AUTH": 15, "HIER": 10, "PERM": 12, "STATUS": 12, "FIELD": 13, "TASK": 11, "FLOW": 12, "RUN": 9, "WEB": 14, "API": 11}
+EXPECTED_CASES = {"AUTH": 15, "HIER": 10, "PERM": 12, "STATUS": 12, "FIELD": 13, "TASK": 11, "FLOW": 12, "RUN": 9, "WEB": 15, "API": 11}
 
 
 def require(condition: bool, message: str) -> None:

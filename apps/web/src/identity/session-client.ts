@@ -2,12 +2,13 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import type {
   BoardResponse,
   Container,
+  CurrentUser,
   ErrorEnvelope,
   TaskProjection,
   WorkspaceOverview,
 } from '@flowboard/contracts';
 
-export type Actor = { userId: string; workspaceId: string; role: 'admin' | 'member' };
+export type Actor = CurrentUser;
 
 type AccessTokenResponse = { accessToken: string };
 type ApiError = Partial<ErrorEnvelope> & { message?: string };
