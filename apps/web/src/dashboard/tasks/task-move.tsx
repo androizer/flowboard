@@ -17,7 +17,7 @@ import type {
   StatusDefinition,
   TaskProjection,
 } from '@flowboard/contracts';
-import { getResolvedConfig, moveTask } from '../identity/session-client';
+import { getResolvedConfig, moveTask } from '../../identity/session-client';
 
 export function TaskMove({
   accessToken,

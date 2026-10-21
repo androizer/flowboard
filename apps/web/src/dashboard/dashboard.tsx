@@ -39,10 +39,10 @@ import {
   placeTask,
   updateTask,
 } from '../identity/session-client';
-import { TaskEditor } from './task-editor';
-import { AdminPanel } from './admin-panel';
-import { TaskMove } from './task-move';
-import { WorkspaceHome } from './workspace-home';
+import { TaskEditor } from './tasks/task-editor';
+import { AdminPanel } from './admin/admin-panel';
+import { TaskMove } from './tasks/task-move';
+import { WorkspaceHome } from './home/workspace-home';
 
 type EditorState = { task: TaskProjection | null; presentation: 'modal' | 'drawer' };
 

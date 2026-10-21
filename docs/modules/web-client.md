@@ -50,6 +50,92 @@ Opening a destination selector uses only visible lists. Obtain its resolved conf
 
 ## 4. Workflows and sequence diagrams
 
+### React component workflow
+
+The browser entry mounts one application root. Session restoration and login state live at the app boundary; the dashboard coordinates the selected workspace surface. Feature editors own their draft state, while `session-client` owns HTTP and refresh behavior. A component file is a useful default when a component has its own responsibility, state, or reuse; small helpers and tightly related presentational pieces may remain beside their owner. The goal is clear ownership, not one function per file.
+
+```mermaid
+sequenceDiagram
+    participant Main as main.tsx
+    participant App as App
+    participant Session as session-client
+    participant Login as LoginScreen
+    participant Dash as Dashboard
+    participant Home as WorkspaceHome
+    participant Board as Board and Table surface
+    participant Editor as TaskEditor
+    participant Move as TaskMove
+    participant Admin as AdminPanel
+    participant AdminTab as Status, Fields, Grants, or Hierarchy editor
+    participant API as Flowboard API
+
+    Note over Main: Mounts React once and enables StrictMode checks during development.
+    Main->>App: Render application root
+    Note over App: Owns restored session, signed-in actor, access token, and sign-in/out transitions.
+    App->>Session: Restore session with refresh cookie
+    Session->>API: POST refresh
+    API-->>Session: Access token
+    Session-->>App: Access token
+    App->>Session: Load current actor
+    Session->>API: GET /v1/me with access token
+    API-->>Session: Current actor
+    Session-->>App: Actor
+    alt Session unavailable
+        App->>Login: Render sign-in surface
+        Note over Login: Collects credentials and presents authentication errors; does not call API directly.
+        Login->>App: Submit credentials
+        App->>Session: Login
+        Session->>API: POST login
+        API-->>Session: Access token
+        Session-->>App: Access token
+        App->>Session: Load current actor
+        Session->>API: GET /v1/me with access token
+        API-->>Session: Current actor
+        Session-->>App: Actor
+    end
+    App->>Dash: Render with actor and token
+    Note over Dash: Coordinates navigation, selected list, loaded data, and task/config workflows.
+    Dash->>Session: Load tree, members, overview, board, or task
+    Session->>API: Authorized API request
+    API-->>Session: Permission-filtered data and resolved configuration
+    Session-->>Dash: Typed result
+    alt Home selected
+        Dash->>Home: Render overview and navigation callbacks
+        Note over Home: Displays server-calculated counts and due items; emits list/task selections.
+    else List selected
+        Dash->>Board: Render kanban or table surface
+        Note over Board: Presents server-loaded tasks; reports open-task and placement intents.
+        Board->>Editor: Open task or create task
+        Note over Editor: Owns task form draft and validates/presents save feedback.
+        Editor->>Dash: Submit task changes
+        Dash->>Session: Create/update task
+        Session->>API: Mutation with expected version
+        API-->>Session: Confirmed task result or error
+        Session-->>Dash: Mutation result
+        Dash->>Board: Refresh confirmed list data
+        opt Move task to another list
+            Editor->>Move: Open destination correction flow
+            Note over Move: Loads destination config and gathers status, field, and source-only clear choices.
+            Move->>Session: Load config and submit move
+            Session->>API: Authorized move request
+            API-->>Session: Confirmed move or validation error
+            Session-->>Dash: Refresh source list after confirmed move
+        end
+    else Admin selected by an admin actor
+        Dash->>Admin: Render administration surface
+        Note over Admin: Selects configuration owner and routes to the matching admin editor.
+        Admin->>AdminTab: Render selected tab editor
+        Note over AdminTab: Owns its focused draft and preserves it when the server rejects a save.
+        AdminTab->>Session: Read or save hierarchy/config/grant data
+        Session->>API: Authorized API request
+        API-->>Session: Data, confirmation, or blocker details
+        Session-->>AdminTab: Result for display
+        AdminTab-->>Dash: Notify successful change
+    end
+```
+
+Dashboard files are grouped by feature: [dashboard.tsx](../../apps/web/src/dashboard/dashboard.tsx) coordinates the surfaces; [admin/](../../apps/web/src/dashboard/admin/admin-panel.tsx) contains the owner/tab selector and its status, fields, grants, and hierarchy editors; [tasks/](../../apps/web/src/dashboard/tasks/task-editor.tsx) contains task editing and move correction; and [home/](../../apps/web/src/dashboard/home/workspace-home.tsx) contains the workspace overview. `main.tsx` wraps the root in React `StrictMode` so effect cleanup and render assumptions are checked during development.
+
 ### Page reload and expiry
 
 ```mermaid

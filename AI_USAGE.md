@@ -23,6 +23,12 @@
 
 - Added Nx-inferred ESLint tasks and Prettier commands. Corrected the initial setup by aligning `@nx/eslint` and `@nx/eslint-plugin` to the lockfile-resolved Nx 20.8.4 version; the Nx documentation requires matching versions.
 
+## 2026-10-21 — Web component boundaries
+
+- Split the four substantial admin editors out of `admin-panel.tsx` into focused component files, keeping the panel responsible for choosing the owner and tab. Clarified in the web guide that one function per file is not a universal React rule; cohesion and ownership guide file boundaries.
+- Wrapped the React root in `StrictMode` to surface unsafe effect/render assumptions during development. Updated the web sequence diagram with inline component responsibility notes.
+- Grouped dashboard UI files by feature under `dashboard/admin`, `dashboard/tasks`, and `dashboard/home`; updated imports and the module guide without changing component logic.
+
 ## 2026-10-21 — Authentication resilience correction
 
 - Review found refresh-token replay revocation was updated and then rolled back because the code threw inside the Prisma transaction. Changed the transaction to return a replay outcome, commit the session revocation, then return HTTP 401.
