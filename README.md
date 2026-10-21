@@ -22,6 +22,24 @@ Use `yarn lint:fix` to apply safe ESLint fixes and `yarn format:write` to format
 
 Demo accounts use `FlowboardDemo!2026` by default: `alice@flowboard.com`, `bob@flowboard.com`, and `carol@flowboard.com`. These are development-only local credentials; the stable application user IDs remain independent of the eventual identity provider.
 
+## Design and requirements
+
+The complete assignment requirements are tracked in [docs/flowboard-module.md](docs/flowboard-module.md), with ownership and acceptance cases in [docs/requirements.md](docs/requirements.md). The [system architecture](docs/architecture.md) shows the trust boundaries, request flow, module dependencies, and location of status and custom-field resolution.
+
+The data model has one workspace and a strict workspace → space → folder → list → tasks hierarchy. A list inherits the nearest complete status set; custom fields accumulate from space through list. The [ER reference](docs/er-diagram.md) is generated from the owning [module guides](docs/README.md), which document validation, archival, permissions, and safe configuration changes.
+
+## API, authentication, and channels
+
+The versioned REST API uses `/v1`, JSON error envelopes, paginated collections, and task versions. Swagger is available at `/docs`; the [API guide](docs/modules/api-contracts.md) is the route and contract reference. The web client and planned curl cookbook use the same routes and authorization workflows.
+
+Users authenticate with local credentials and Flowboard access JWTs plus rotating refresh cookies. The API resolves the current membership and role; it does not trust request-body roles. Future SSO verifiers are designed to converge on the same Flowboard session service. See [identity and session decisions](docs/modules/identity.md) and [ADR-0004](docs/adr/0004-authentication.md).
+
+## Scale, IPC, and trade-offs
+
+The backend is a modular monolith with stateless API processes and PostgreSQL-backed sessions. Domain repositories stay within their owners; workflows coordinate cross-module changes transactionally. No worker or queue is included. The future activity/search path is an outbox and worker with idempotent consumers, retries, and eventual consistency; see [architecture](docs/architecture.md) and [ADR-0005](docs/adr/0005-delivery-and-consistency.md).
+
+The MVP prioritizes scoped configuration, validation, permission enforcement, and atomic moves over stretch features such as search, live updates, and bulk edits. See the [roadmap](docs/implementation-plan.md) for planned work and delivery status. AI corrections and rejected output are recorded in [AI_USAGE.md](AI_USAGE.md).
+
 ## Connect a local database client
 
 The base Compose file intentionally keeps PostgreSQL off the host network. To use a local VS Code PostgreSQL extension, create an untracked `compose.override.yml` at the repository root. Docker Compose loads this file automatically when you run `docker compose up --build`.

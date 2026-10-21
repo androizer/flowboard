@@ -8,7 +8,7 @@ During Days 1-3, maintain scenarios and use manual smoke checks, documentation c
 
 Each module owns its detailed scenario rows. This page indexes them without duplicating their expected behavior. When rules change, update the owner scenarios and this index only if the group changes.
 
-The current backlog has 99 scenario rows, not a requirement for 99 separate test files. Parameterized tests and shared fixtures can cover related rows. Preserve the observable outcomes instead of mirroring internal implementation details.
+The current backlog has 103 scenario rows, not a requirement for 103 separate test files. Parameterized tests and shared fixtures can cover related rows. Preserve the observable outcomes instead of mirroring internal implementation details.
 
 ## 2. Scenario owners
 
@@ -19,11 +19,11 @@ The current backlog has 99 scenario rows, not a requirement for 99 separate test
 | PERM-01 through PERM-10     | [Permissions](modules/permissions.md)     | Required: role/grant/tree/direct URL consistency                 |
 | STATUS-01 through STATUS-10 | [Statuses](modules/statuses.md)           | Required: inheritance/sibling columns/config safety              |
 | FIELD-01 through FIELD-10   | [Custom fields](modules/custom-fields.md) | Required: six types/required/options/migration safety            |
-| TASK-01 through TASK-10     | [Tasks](modules/tasks.md)                 | Required: task/assignment/value/version/order                    |
-| FLOW-01 through FLOW-09     | [Workflows](modules/workflows.md)         | Required: atomic move/config/race behavior                       |
+| TASK-01 through TASK-11     | [Tasks](modules/tasks.md)                 | Required: task/assignment/value/version/order                    |
+| FLOW-01 through FLOW-10     | [Workflows](modules/workflows.md)         | Required: atomic move/config/race behavior                       |
 | RUN-01 through RUN-09       | [Runtime](modules/persistence-runtime.md) | Required: real PostgreSQL/Docker/seed/constraints                |
-| WEB-01 through WEB-10       | [Web](modules/web-client.md)              | Required: browser journey and identity cleanup                   |
-| API-01 through API-08       | [API/contracts](modules/api-contracts.md) | Required: standardized API and channel agreement                 |
+| WEB-01 through WEB-11       | [Web](modules/web-client.md)              | Required: browser journey and identity cleanup                   |
+| API-01 through API-09       | [API/contracts](modules/api-contracts.md) | Required: standardized API and channel agreement                 |
 
 ## 3. Test environments
 
