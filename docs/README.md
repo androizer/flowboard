@@ -9,6 +9,7 @@ Use this page to find the design and behavior details that do not belong in the 
 | Product assignment and required outcomes | [Product brief](flowboard-module.md) |
 | Requirements mapped to acceptance evidence | [Requirements](requirements.md) |
 | Application scenarios and test TODOs | [Test plan](test-plan.md) |
+| Web performance as data grows | [Web performance guide](web-performance.md) |
 | Shared project vocabulary | [Glossary](glossary.md) |
 
 ## System design

@@ -8,6 +8,8 @@ The web client makes the business rules understandable. Alice signs in to Work o
 
 React uses Ant Design for forms, table, tree, modal, and drawer. Day 2 uses native desktop drag events for kanban placement, React state for list selection, and confirmed API refetches for server data. Route-aware navigation and richer query caching can be added after the required views are stable. Local selection, open task surfaces, and pending states are UI state, not extra database tables.
 
+The current client is sized for the MVP dataset. The code-backed growth risks and a measurement-first optimization order are recorded in the [web performance guide](../web-performance.md); they are future work, not implemented behavior.
+
 ## 2. Ownership, data, and decisions
 
 | UI area          | Planned components and behavior                                                                                                                                                                                                                                                                                                                    |
