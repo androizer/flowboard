@@ -2,9 +2,9 @@
 
 ## Read before implementation
 
-Start at [docs/README.md](docs/README.md). Read the owning module guide, its ADRs, public callers, and test TODOs before changing behavior. The module guides are the source of truth; [architecture](docs/architecture.md) owns dependency policy, and [API/contracts](docs/modules/api-contracts.md) owns HTTP conventions. The archived monolithic plan is historical only.
+Start at [docs/README.md](docs/README.md). Read the owning module guide, its ADRs, public callers, and test TODOs before changing behavior. The module guides are the source of truth; [architecture](docs/architecture.md) owns dependency policy, and [API/contracts](docs/modules/api-contracts.md) owns HTTP conventions.
 
-All application behavior is currently planned. Do not claim it is implemented because documentation or diagrams exist. Implement phases from [the roadmap](docs/implementation-plan.md); do not start an unrelated feature just because it is a future design.
+Application behavior may be planned or implemented. Do not claim it is implemented because documentation or diagrams exist. Follow the [requirements](docs/requirements.md) and owning [module guide](docs/README.md); do not start an unrelated feature just because it appears in future design notes.
 
 ## Preserve boundaries and accepted identity design
 

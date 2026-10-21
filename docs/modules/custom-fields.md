@@ -1,6 +1,6 @@
 # Module: custom fields
 
-Status: Day 2 resolution/answer validation and Day 3 local field/option writes, reorder, safety checks, and admin editor added; [manual Day 3 runtime review](../day3-runtime-review.md) completed, Day 4 executable tests pending. Code owner: `apps/api/src/custom-fields`. Navigation: [hub](../README.md), [ADR-0003](../adr/0003-scoped-configuration.md), [tasks](tasks.md), [workflows](workflows.md).
+Status: Day 2 resolution/answer validation and Day 3 local field/option writes, reorder, safety checks, and admin editor added; manual runtime review completed, executable application tests pending. Code owner: `apps/api/src/custom-fields`. Navigation: [hub](../README.md), [ADR-0003](../adr/0003-scoped-configuration.md), [tasks](tasks.md), [workflows](workflows.md).
 
 ## 1. Purpose and example
 

@@ -1,6 +1,6 @@
 # Module: tasks
 
-Status: Day 2 reads, create/edit/archive, placement, move, answers, and assignments implemented; [manual Day 3 runtime review](../day3-runtime-review.md) verified browser create/edit/move after a persistence fix, Day 4 executable tests pending. Code owner: `apps/api/src/tasks`. Navigation: [hub](../README.md), [workflows](workflows.md), [fields](custom-fields.md), [statuses](statuses.md).
+Status: Day 2 reads, create/edit/archive, placement, move, answers, and assignments implemented; manual runtime review verified browser create/edit/move after a persistence fix, executable application tests pending. Code owner: `apps/api/src/tasks`. Navigation: [hub](../README.md), [workflows](workflows.md), [fields](custom-fields.md), [statuses](statuses.md).
 
 ## 1. Purpose and example
 

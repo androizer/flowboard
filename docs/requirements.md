@@ -1,8 +1,8 @@
 # Assignment requirements and ownership
 
-Navigation: [hub](README.md), [roadmap](implementation-plan.md), [test plan](test-plan.md).
+Navigation: [hub](README.md), [test plan](test-plan.md).
 
-The [assignment requirements](flowboard-module.md) define required behavior. Section references below point to its headings, not new requirements invented by implementation. Local password/JWT/refresh authentication is an explicitly chosen addition replacing the assignment's permitted mock identity. Day 3 admin/move code is added, with runtime verification pending; the user deferred the second-channel proof, and Day 4 application tests remain TODOs.
+The [assignment requirements](flowboard-module.md) define required behavior. Section references below point to its headings, not new requirements invented by implementation. Local password/JWT/refresh authentication is an explicitly chosen addition replacing the assignment's permitted mock identity. Admin and move flows have code and manual runtime review; executable application tests remain TODOs.
 
 ## 1. Required product surface
 
@@ -27,8 +27,8 @@ The [assignment requirements](flowboard-module.md) define required behavior. Sec
 | REQ-DOCKER  | One-command Docker run, env example, bootstrap/seed; Engineering expectations §7 and Deliverables                                        | [Runtime](modules/persistence-runtime.md)                                  | RUN-01 through RUN-03, RUN-07, RUN-09 |
 | REQ-SEED    | Workspace/tree/users/grants/config/20+ tasks/migrations; Must-have requirements §7                                                       | [Runtime](modules/persistence-runtime.md)                                  | RUN-01, RUN-02, FIELD-01, STATUS-03   |
 | REQ-TEST    | Named backend edge cases, frontend journey, Docker/make test; Must-have requirements §8                                                  | [Test plan](test-plan.md)                                                  | All module TODO groups; WEB-01/WEB-02 |
-| REQ-DOC     | Run, design, model, API, auth/channel, scale/IPC, trade-offs/AI log; Must-have requirements §9                                           | [Hub](README.md), [roadmap](implementation-plan.md)                        | Documentation gate                    |
-| REQ-SUBMIT  | Git source, Compose/env, README, 4–6 minute demo; Deliverables                                                                           | [Roadmap](implementation-plan.md)                                          | Final submission checklist            |
+| REQ-DOC     | Run, design, model, API, auth/channel, scale/IPC, trade-offs/AI log; Must-have requirements §9                                           | [Hub](README.md)                                                           | Documentation gate                    |
+| REQ-SUBMIT  | Git source, Compose/env, README, 4–6 minute demo; Deliverables                                                                           | [Project README](../README.md)                                             | Final submission checklist            |
 
 ## 3. User-selected additions and defaults
 

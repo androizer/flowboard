@@ -1,6 +1,6 @@
 # Application architecture
 
-Status: planned. Navigation: [hub](README.md), [roadmap](implementation-plan.md), [ER reference](er-diagram.md).
+Status: planned. Navigation: [hub](README.md), [ER reference](er-diagram.md).
 
 ## 1. The application in everyday language
 

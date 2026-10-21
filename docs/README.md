@@ -1,70 +1,61 @@
-# Flowboard documentation hub
+# Flowboard documentation
 
-Status: Day 1–2 foundation/task views are implemented. Day 3 administration and move UI code is present; static builds pass, while runtime verification and Day 4 executable tests remain pending.
+Use this page to find the design and behavior details that do not belong in the [project README](../README.md).
 
-Start here. These documents explain what Flowboard does, why it is structured this way, and how to build one part without accidentally breaking another.
+## Product and delivery
 
-The [assignment requirements](flowboard-module.md) are the source for required product and delivery outcomes. Module guides record Flowboard's chosen rules and implementation details where the assignment leaves a choice. If a guide conflicts with a requirement, resolve the conflict explicitly before changing code.
+| Topic | Document |
+| --- | --- |
+| Product assignment and required outcomes | [Product brief](flowboard-module.md) |
+| Requirements mapped to acceptance evidence | [Requirements](requirements.md) |
+| Application scenarios and test TODOs | [Test plan](test-plan.md) |
+| Shared project vocabulary | [Glossary](glossary.md) |
 
-## 1. Find the right guide
+## System design
 
-| I want to understand...                   | Read                                                                                |
-| ----------------------------------------- | ----------------------------------------------------------------------------------- |
-| The whole application and module links    | [Architecture](architecture.md) and [business walkthrough](business-walkthrough.md) |
-| When to build each part                   | [Implementation roadmap](implementation-plan.md)                                    |
-| Every table and relationship              | [Complete ER reference](er-diagram.md)                                              |
-| A particular user action and its diagrams | [Workflow index](workflow-index.md)                                                 |
-| Assignment coverage and tests             | [Requirements](requirements.md) and [test plan](test-plan.md)                       |
-| How to make a future change safely        | [Change guide](change-guide.md) and [glossary](glossary.md)                         |
+| Topic | Document |
+| --- | --- |
+| System boundaries, dependencies, and data ownership | [Architecture](architecture.md) |
+| Complete data model, generated from module schemas | [ER reference](er-diagram.md) |
+| End-to-end product example | [Business walkthrough](business-walkthrough.md) |
+| User and system workflows | [Workflow index](workflow-index.md) |
 
-## 2. Module guides: the source of truth for behavior
+## Architecture decisions
 
-Each guide contains a plain-language example, ownership, decisions, links, interfaces, diagrams, failure cases, build steps, and test TODOs.
+ADRs record why major design choices were made. Current behavior and implementation details live in the owning module guide.
 
-| Module                                                    | What it does                                                        | Main data                                                             |
-| --------------------------------------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| [Identity and authentication](modules/identity.md)        | Signs people in, renews access, resolves the current person         | Users, identities, credentials, memberships, sessions, refresh tokens |
-| [Hierarchy](modules/hierarchy.md)                         | Organizes workspace, spaces, folders, and lists                     | Workspaces, containers                                                |
-| [Permissions](modules/permissions.md)                     | Decides what the current person can see or change                   | Container grants                                                      |
-| [Statuses](modules/statuses.md)                           | Finds the correct columns for a selected list                       | Status sets, statuses                                                 |
-| [Custom fields](modules/custom-fields.md)                 | Defines additional task inputs and validates answers                | Field definitions, options                                            |
-| [Tasks](modules/tasks.md)                                 | Stores work items, assignments, values, and order                   | Tasks, assignments, field values                                      |
-| [Application workflows](modules/workflows.md)             | Coordinates operations that touch several modules                   | No additional tables                                                  |
-| [Persistence and runtime](modules/persistence-runtime.md) | Runs PostgreSQL, transactions, migrations, seeds, and Docker        | Infrastructure only                                                   |
-| [Web client](modules/web-client.md)                       | Presents login, navigation, board, table, detail, and configuration | No browser-owned business database                                    |
-| [API and contracts](modules/api-contracts.md)             | Gives clients one predictable HTTP language                         | No additional tables                                                  |
+| ADR | Decision |
+| --- | --- |
+| [0001](adr/0001-modular-monolith.md) | Modular monolith and technology boundaries |
+| [0002](adr/0002-hierarchy-and-access.md) | Workspace hierarchy and access rules |
+| [0003](adr/0003-scoped-configuration.md) | Inherited statuses and custom fields |
+| [0004](adr/0004-authentication.md) | User credentials and shared session/token service |
+| [0005](adr/0005-delivery-and-consistency.md) | Transactions, HTTP conventions, runtime, and consistency |
 
-## 3. Where decisions live
+## Module guides
 
-| Record                                           | Decision                                                           |
-| ------------------------------------------------ | ------------------------------------------------------------------ |
-| [ADR-0001](adr/0001-modular-monolith.md)         | Nx/Yarn, module boundaries, React/AntD, NestJS/PostgreSQL          |
-| [ADR-0002](adr/0002-hierarchy-and-access.md)     | Strict hierarchy, archival, membership, grants                     |
-| [ADR-0003](adr/0003-scoped-configuration.md)     | Replacement status sets, additive fields, safe configuration edits |
-| [ADR-0004](adr/0004-authentication.md)           | User-owned credentials and shared local/SSO sessions and tokens    |
-| [ADR-0005](adr/0005-delivery-and-consistency.md) | Transactions, API conventions, Docker, testing, future IPC         |
+Each guide owns its module's behavior, data, interfaces, workflows, failure cases, and application-test TODOs.
 
-An ADR records why a decision was made. The owning module guide states its exact current behavior. An implementation change updates both when it changes that decision. If they conflict, resolve the conflict explicitly; do not silently choose whichever is easier.
+| Module | Guide |
+| --- | --- |
+| Identity and authentication | [identity](modules/identity.md) |
+| Workspace hierarchy | [hierarchy](modules/hierarchy.md) |
+| Permissions and grants | [permissions](modules/permissions.md) |
+| Status configuration | [statuses](modules/statuses.md) |
+| Custom fields | [custom fields](modules/custom-fields.md) |
+| Tasks and task values | [tasks](modules/tasks.md) |
+| Cross-module operations | [workflows](modules/workflows.md) |
+| Database, migrations, and Compose runtime | [persistence and runtime](modules/persistence-runtime.md) |
+| Web application | [web client](modules/web-client.md) |
+| HTTP conventions and client contracts | [API and contracts](modules/api-contracts.md) |
 
-## 4. One authority per detail
+## Maintaining the docs
 
-The module guide owns its rules, public module interfaces, table definitions, examples, and test scenarios. The API/contracts guide owns HTTP route names and common request/response rules. The runtime guide owns bootstrap and seed rules. The architecture guide owns the allowed dependency graph. The roadmap owns timing, not feature semantics.
-
-The complete ER reference is generated from schema blocks in owning module guides. Do not edit its table columns independently. The old [monolithic plan](archive/2026-10-20-monolithic-plan.md) is preserved only as historical evidence and is not an additional source of requirements.
-
-Refresh and check documentation with:
+Read the [change guide](change-guide.md) before changing documented behavior. Use the checker to validate owned schemas, protected identity rules, required test TODOs, architecture dependency policy, and Markdown links. It also regenerates the ER reference from schema blocks in the module guides:
 
 ```bash
-python3 docs/tools/check_docs.py --write
-python3 docs/tools/check_docs.py --check
+python3 docs/tools/check_docs.py --write  # regenerate ER reference and validate
+python3 docs/tools/check_docs.py --check  # validate without writing
 ```
 
-These commands check documentation. They do not implement or run application tests. Mermaid diagrams describe planned behavior; they are not evidence that the application already works.
-
-## 5. Suggested reading order
-
-1. Read the architecture and business walkthrough for the overall picture.
-2. Read identity and hierarchy for who a person is and where work lives.
-3. Read permissions, statuses, custom fields, and tasks for the business rules.
-4. Read workflows and API/web guides for how a user action crosses the system.
-5. Follow the roadmap and the change guide before implementing a phase.
+The checker validates documentation only. It does not run the application or its tests. API routes and their available request/response documentation are exposed by the running API's Swagger UI at `/docs`.

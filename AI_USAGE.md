@@ -55,7 +55,7 @@
 
 - Browser and HTTP review exposed HTTP 500 on task edit, corrected move, and task creation. The error was a Prisma client validation failure in nested assignment/answer writes. Replaced the nested writes with ordered task, assignment, and answer operations inside the existing workflow transaction; browser edit/move/create and archived configuration safety probes passed afterward.
 - A direct Prisma diagnostic write was rejected by automatic approval review because it would delete and recreate task values just to reproduce the error. Continued with the authorized browser/API journeys, read-only source inspection, and isolated runtime checks instead.
-- Recorded the manual pass, controlled concurrency and inactive-membership probes, and remaining Day 4 executable-test cases in [the runtime review](docs/day3-runtime-review.md). No passing application test suite was invented.
+- Recorded a manual runtime pass, controlled concurrency and inactive-membership probes, and remaining executable-test cases. The detailed runtime review document was removed during the docs cleanup; no passing application test suite was invented.
 
 ## 2026-10-21 — Account header correction
 
