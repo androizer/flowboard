@@ -8,22 +8,22 @@ During Days 1-3, maintain scenarios and use manual smoke checks, documentation c
 
 Each module owns its detailed scenario rows. This page indexes them without duplicating their expected behavior. When rules change, update the owner scenarios and this index only if the group changes.
 
-The current backlog has 119 scenario rows, not a requirement for 119 separate test files. Parameterized tests and shared fixtures can cover related rows. Preserve the observable outcomes instead of mirroring internal implementation details.
+The current backlog has 139 scenario rows, not a requirement for 139 separate test files. Parameterized tests and shared fixtures can cover related rows. Preserve the observable outcomes instead of mirroring internal implementation details.
 
 ## 2. Scenario owners
 
 | Group                       | Owner and setup/action/outcome details    | Priority                                                         |
 | --------------------------- | ----------------------------------------- | ---------------------------------------------------------------- |
 | AUTH-01 through AUTH-15     | [Identity](modules/identity.md)           | Required: login/session/rotation/revocation/reference invariants |
-| HIER-01 through HIER-10     | [Hierarchy](modules/hierarchy.md)         | Required: tree/type/scope/archive/order                          |
-| PERM-01 through PERM-12     | [Permissions](modules/permissions.md)     | Required: role/grant/tree/direct URL consistency                 |
-| STATUS-01 through STATUS-12 | [Statuses](modules/statuses.md)           | Required: inheritance/sibling columns/config safety              |
-| FIELD-01 through FIELD-13   | [Custom fields](modules/custom-fields.md) | Required: six types/required/options/migration safety            |
+| HIER-01 through HIER-13     | [Hierarchy](modules/hierarchy.md)         | Required: tree/type/scope/archive/order/member creation          |
+| PERM-01 through PERM-16     | [Permissions](modules/permissions.md)     | Required: role/grant/tree/direct URL consistency                 |
+| STATUS-01 through STATUS-13 | [Statuses](modules/statuses.md)           | Required: inheritance/sibling columns/config safety              |
+| FIELD-01 through FIELD-14   | [Custom fields](modules/custom-fields.md) | Required: six types/required/options/migration safety            |
 | TASK-01 through TASK-11     | [Tasks](modules/tasks.md)                 | Required: task/assignment/value/version/order                    |
-| FLOW-01 through FLOW-12     | [Workflows](modules/workflows.md)         | Required: atomic move/config/race behavior                       |
+| FLOW-01 through FLOW-14     | [Workflows](modules/workflows.md)         | Required: atomic move/config/race/container creation             |
 | RUN-01 through RUN-09       | [Runtime](modules/persistence-runtime.md) | Required: real PostgreSQL/Docker/seed/constraints                |
-| WEB-01 through WEB-14       | [Web](modules/web-client.md)              | Required: browser journey and identity cleanup                   |
-| API-01 through API-11       | [API/contracts](modules/api-contracts.md) | Required: standardized API and channel agreement                 |
+| WEB-01 through WEB-22       | [Web](modules/web-client.md)              | Required: browser journey and identity cleanup                   |
+| API-01 through API-12       | [API/contracts](modules/api-contracts.md) | Required: standardized API and channel agreement                 |
 
 ## 3. Test environments
 

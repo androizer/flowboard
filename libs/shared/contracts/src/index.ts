@@ -1,5 +1,6 @@
 export type Actor = { userId: string; workspaceId: string; role: 'admin' | 'member' };
 export type CurrentUser = Actor & { displayName: string; email: string | null };
+export type WorkspaceMember = { id: string; name: string; role: 'admin' | 'member' };
 export type ErrorEnvelope = {
   error: { code: string; message: string; details?: Array<{ path: string; reason: string }> };
 };
@@ -15,6 +16,7 @@ export type Container = {
   type: 'space' | 'folder' | 'list';
   parentContainerId: string | null;
   visibility?: 'public' | 'private';
+  createdByUserId?: string | null;
   position?: number;
 };
 export type StatusDefinition = {

@@ -31,6 +31,7 @@ This module owns the workspace and container records. Tasks are shown in the exa
 erDiagram
     WORKSPACES ||--o{ CONTAINERS : contains
     CONTAINERS o|--o{ CONTAINERS : parents
+    WORKSPACE_MEMBERSHIPS o|--o{ CONTAINERS : creates
 
     WORKSPACES {
         uuid id PK
@@ -44,6 +45,7 @@ erDiagram
         string type "space, folder, list"
         string name
         string visibility "public, private"
+        uuid created_by_user_id FK "Nullable for older containers"
         decimal position
         datetime archived_at "Nullable"
         datetime created_at
@@ -63,6 +65,8 @@ erDiagram
 
 Only one workspace is supported in the MVP. The root is seeded and may be renamed; creating a second tenant/workspace is outside scope. Space/folder/list CRUD is available through workflows. An empty folder or space is valid. Normal tree responses omit archived branches.
 
+Every active workspace member may create a space under the workspace root, a folder under an accessible space, or a list under an accessible folder. Creation records the actor's user ID against their workspace membership. The creator of a private container receives a direct allow in the same transaction; an inaccessible or denied parent cannot be selected or used. A creator may share their own accessible container through direct grants, while an admin may grant access anywhere. Older containers with no recorded creator remain admin-managed. The shared creation form is available to members from the sidebar and to admins in Hierarchy. The current admin selection may suggest a parent, but it never hides the other creation options. Tasks are created in lists, not in folders. Only admins can rename, change visibility, archive, or reorder existing containers.
+
 `parent_type` is an internal relation key, never a client input. Hierarchy-owned writes set it from the child type; the database check and FK reject a missing, forged, or mismatched value. This also prevents cycles because each non-root edge goes exactly one level toward a space. Existing invalid rows stop the migration for deliberate repair; no row is silently reparented. Physical parent deletion is restricted; archive retains the hierarchy.
 
 Sibling order is scoped to one parent (spaces use the workspace as the sibling group). Reordering cannot change parentId. Use simple server-assigned dense positions in this small dataset; decimal storage permits whole-number positions. Recalculate the affected sibling group transactionally, with ID as a deterministic query tie-breaker.
@@ -79,7 +83,7 @@ Sibling order is scoped to one parent (spaces use the workspace as the sibling g
 
 Expose read-only ancestry/descendant queries and transaction-aware owned writes. The public normal-read path rejects archived ancestors. A separate internal safety query can inspect retained archived branches when checking configuration usage. It does not become a public archive browsing API.
 
-Permission filtering belongs to permissions/workflows. Hierarchy's active tree omits archived nodes and descendants with an archived ancestor; it cannot promise that a raw tree query is safe to return to a member. Admin writes are authorized by the workflow before mutation.
+Permission filtering belongs to permissions/workflows. Hierarchy's active tree omits archived nodes and descendants with an archived ancestor; it cannot promise that a raw tree query is safe to return to a member. Creation checks fresh membership and the full parent path inside the workflow transaction. Other hierarchy writes require admin there.
 
 ## 4. Workflows and sequence diagrams
 
@@ -87,27 +91,34 @@ Permission filtering belongs to permissions/workflows. Hierarchy's active tree o
 
 ```mermaid
 flowchart TD
-    Input["Admin requests a list under Q2 Launch"] --> Lock["Start workspace write transaction"]
-    Lock --> Access["Refresh Actor and require admin"]
+    Input["Member requests a list under Q2 Launch"] --> Lock["Start workspace write transaction"]
+    Lock --> Access["Refresh Actor and check full parent path"]
     Access --> Parent["Parent exists, active, same workspace, type folder"]
-    Parent --> Insert["Append list with server position"]
-    Insert --> Commit["Commit and return list"]
+    Parent --> Insert["Append list with server position and creator"]
+    Insert --> Private{"Private and creator is member?"}
+    Private -->|Yes| Grant["Allow creator on new container"]
+    Private -->|No| Commit["Commit and return list"]
+    Grant --> Commit
     Parent -->|Invalid| Error["Reject without inserting"]
 ```
 
 ```mermaid
 sequenceDiagram
-    participant Web as Admin UI
+    participant Web as Member or admin UI
     participant Flow as Container workflow
     participant ID as Identity
     participant H as Hierarchy
+    participant P as Permissions
     participant DB as Transaction coordinator
     Web->>Flow: Create list under folder
     Flow->>DB: Begin and lock workspace
-    Flow->>ID: Refresh active Actor in transaction
-    Flow->>Flow: Require admin
+    Flow->>ID: Refresh active membership
+    Flow->>P: Check full parent access path
     Flow->>H: Check parent type, scope, active ancestors
     Flow->>H: Insert list and assign sibling position
+    opt Private container created by member
+        Flow->>P: Add creator allow grant
+    end
     Flow->>DB: Commit
     Flow-->>Web: Created container
 ```
@@ -146,8 +157,11 @@ Build basic schema/ancestry in Day 1, consumption by resolvers/tasks in Day 2, a
 | HIER-05 | Archive folder -> tree/list/task normal access excludes all descendants, rows remain stored.                                  |
 | HIER-06 | Safety query for retained archived data -> still finds configuration usage.                                                   |
 | HIER-07 | Empty container -> valid response with no children.                                                                           |
-| HIER-08 | Member attempts container mutation -> 403; second workspace creation unsupported.                                             |
+| HIER-08 | Member creates under accessible parent -> success; rename/archive/reorder -> 403; second workspace unsupported.               |
 | HIER-09 | Archive parent with descendant tasks/config -> active reads return 404 while retained safety queries still find them.         |
 | HIER-10 | Reorder with omitted, duplicated, archived, or foreign sibling -> 400 and original positions remain.                          |
+| HIER-11 | Admin and member can discover and create space/folder/list; parent picker offers valid, visible parents.                      |
+| HIER-12 | Member creates private container -> creator ID and allow commit together, node visible; denied parent -> 403 and no write.    |
+| HIER-13 | Existing container without a trusted creator -> admin manages sharing; creator cannot be inferred from an allow grant alone.  |
 
 For a parent/type/archive change, update hierarchy, permissions, status/field ancestry callers, task/move examples, [ADR-0002](../adr/0002-hierarchy-and-access.md), and schema constraints. Never add nesting by only relaxing one UI control.

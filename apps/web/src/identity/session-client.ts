@@ -6,6 +6,7 @@ import type {
   ErrorEnvelope,
   TaskProjection,
   WorkspaceOverview,
+  WorkspaceMember,
 } from '@flowboard/contracts';
 
 export type Actor = CurrentUser;
@@ -233,11 +234,11 @@ export function getTask(accessToken: string, id: string) {
   return api<TaskProjection>(`/v1/tasks/${id}`, {}, accessToken);
 }
 export async function getMembers(accessToken: string) {
-  const items: Array<{ id: string; name: string }> = [];
+  const items: WorkspaceMember[] = [];
   let hasMore = true;
   while (hasMore) {
     const result = await api<{
-      items: Array<{ id: string; name: string }>;
+      items: WorkspaceMember[];
       page: { hasMore: boolean };
     }>(`/v1/users?offset=${items.length}&limit=100`, {}, accessToken);
     if (result.page.hasMore && result.items.length === 0)

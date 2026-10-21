@@ -74,6 +74,7 @@ export class HierarchyService {
     type: ContainerType,
     name: string,
     visibility: Visibility,
+    createdByUserId: string,
     db: DomainDb,
   ) {
     const siblings = await db.container.findMany({
@@ -89,6 +90,7 @@ export class HierarchyService {
         type,
         name,
         visibility,
+        createdByUserId,
         position: (siblings[0]?.position.toNumber() ?? 0) + 1,
       },
     });

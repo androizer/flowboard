@@ -34,6 +34,8 @@ No owned ER block exists because no workflow table exists. The [complete ER](../
 
 The API guard establishes identity. A domain workflow then resolves the stored resource and its permissions; caller-supplied parent/list IDs cannot override a task's real source list. Grant changes use the same domain workspace lock as task/config writes. Requests already authorized before logout may finish; new requests cannot use a revoked session.
 
+Container creation locks the workspace, reloads active membership, checks the full parent path when there is one, validates its type, then inserts the container with its creator ID. If a member chose private visibility, the workflow also writes that member's allow grant before commit. Grant mutations lock and refresh membership, then allow an admin or the accessible exact-container creator. Creator self-grant edits are rejected; creator allows require the recipient to reach the parent first. Other hierarchy mutations still require admin membership.
+
 ## 3. Connections and interfaces
 
 Domain HTTP handlers call workflows. Workflows return transport-safe projections/errors through [API/contracts](api-contracts.md). Identity routes stay in identity. All allowed imports are explicit in [architecture](../architecture.md).
@@ -44,7 +46,7 @@ Domain HTTP handlers call workflows. Workflows return transport-safe projections
 | Create/update/archive/reorder task   | One validated task mutation with version and placement updates.                  |
 | Move task                            | One source/destination/config/value/placement mutation.                          |
 | Change status/field configuration    | Candidate checked against all affected retained tasks, then applied or rejected. |
-| Administer containers/grants         | Authorized structural/access change under the same lock.                         |
+| Create/administer containers, grants | Member creation under accessible parents; admin-only structural/access edits.    |
 
 Board responses contain a complete resolved status/field configuration plus a task page. The web client loads all pages for the small selected-list dataset. Each page is internally consistent; if later pages reveal incompatible config or failed validation, discard/refetch rather than combine contradictory data. We do not claim one database snapshot persists across separate HTTP requests.
 
@@ -174,6 +176,8 @@ Create read/task workflows in Day 2 and config/admin workflows in Day 3. Control
 | FLOW-09 | Separate board pages straddle config change -> client refetches rather than assumes a cross-request snapshot.                                          |
 | FLOW-10 | Overview for Alice/Bob/Carol -> only each actor's accessible active lists and tasks contribute; one response has consistent counts and upcoming order. |
 | FLOW-11 | Status/required-field change racing with task edit -> serialized result; invalid candidate rolls back.                                                 |
-| FLOW-12 | Member submits admin mutation with forged body role -> 403 after fresh membership check; no owner write.                                               |
+| FLOW-12 | Member submits admin-only mutation with forged body role -> 403 after fresh membership check; no owner write.                                          |
+| FLOW-13 | Member creates private container -> container, creator ID, and allow commit together; denied parent or failed grant rolls back.                        |
+| FLOW-14 | Creator grant transaction reloads role, ownership, parent access, and recipient eligibility; rejected share leaves grants unchanged.                   |
 
 When changing a workflow, update the order diagram, transaction boundary, owner interfaces, HTTP contract, and failure example together. Do not move cross-domain validation into a task or config repository to simplify a controller.

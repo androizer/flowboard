@@ -136,6 +136,8 @@ HTTP endpoints are defined in [API/contracts](api-contracts.md). Only identity h
 
 `GET /v1/me` returns the active actor IDs/role plus the user's `displayName` and a nullable `email` for the account menu. In the local MVP, `email` comes from the user-owned login identifier only when it is email-form; a username-only or future SSO-only account returns `null` until a separately verified email is available. The menu must not infer an email from an identity-provider token or show another member's account details.
 
+`GET /v1/users` returns each active workspace member's ID, display name, and current membership role. Task assignment pickers may use all active members; grant pickers use only rows with role `member`. Grant writes recheck the target membership inside their transaction.
+
 ## 4. Workflows and sequence diagrams
 
 ### Local and future SSO convergence

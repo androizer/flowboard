@@ -82,6 +82,7 @@ erDiagram
     WORKSPACES ||--o{ WORKSPACE_MEMBERSHIPS : has_members
     WORKSPACES ||--o{ CONTAINERS : contains
     CONTAINERS o|--o{ CONTAINERS : parents
+    WORKSPACE_MEMBERSHIPS o|--o{ CONTAINERS : creates
     CONTAINERS ||--o{ CONTAINER_GRANTS : has_grants
     WORKSPACE_MEMBERSHIPS ||--o{ CONTAINER_GRANTS : receives
     WORKSPACES ||--o{ STATUS_SETS : scopes
@@ -111,6 +112,7 @@ erDiagram
         string type "space, folder, list"
         string name
         string visibility "public, private"
+        uuid created_by_user_id FK "Nullable for older containers"
         decimal position
         datetime archived_at "Nullable"
         datetime created_at
@@ -173,6 +175,7 @@ erDiagram
     WORKSPACES ||--o{ WORKSPACE_MEMBERSHIPS : has_members
     WORKSPACES ||--o{ CONTAINERS : contains
     CONTAINERS o|--o{ CONTAINERS : parents
+    WORKSPACE_MEMBERSHIPS o|--o{ CONTAINERS : creates
     WORKSPACES ||--o{ CUSTOM_FIELD_DEFINITIONS : scopes
     CONTAINERS ||--o{ CUSTOM_FIELD_DEFINITIONS : defines
     WORKSPACES ||--o{ TASKS : scopes
@@ -196,6 +199,7 @@ erDiagram
         string type "space, folder, list"
         string name
         string visibility "public, private"
+        uuid created_by_user_id FK "Nullable for older containers"
         decimal position
         datetime archived_at "Nullable"
         datetime created_at

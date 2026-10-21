@@ -172,7 +172,7 @@ export class AuthService {
       }),
     ]);
     return {
-      items: rows.map((row) => ({ id: row.userId, name: row.user.displayName })),
+      items: rows.map((row) => ({ id: row.userId, name: row.user.displayName, role: row.role })),
       page: { offset, limit, total, hasMore: offset + limit < total },
     };
   }
@@ -208,6 +208,16 @@ export class AuthService {
       where: { workspaceId, userId: { in: ids }, isActive: true, user: { isActive: true } },
     });
     return rows.map((row) => row.userId);
+  }
+  /** Grants apply only to active members; admins already have workspace-wide access. */
+  async eligibleGrantTarget(workspaceId: string, userId: string, db: Prisma.TransactionClient) {
+    const membership = await db.workspaceMembership.findUnique({
+      where: { workspaceId_userId: { workspaceId, userId } },
+      include: { user: true },
+    });
+    return Boolean(
+      membership?.isActive && membership.user.isActive && membership.role === MembershipRole.member,
+    );
   }
   /** Verifies the access token, its session, and current membership before returning the caller. */
   async actor(accessToken: string) {

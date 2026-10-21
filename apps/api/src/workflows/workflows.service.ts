@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -108,6 +109,7 @@ export class WorkflowsService {
       type: node.type,
       name: node.name,
       visibility: node.visibility,
+      createdByUserId: node.createdByUserId,
       position: node.position.toNumber(),
       archivedAt: node.archivedAt,
     };
@@ -148,7 +150,7 @@ export class WorkflowsService {
     return this.containerView(path.at(-1)!);
   }
 
-  /** Creates a container under the permitted space → folder → list hierarchy. */
+  /** Lets an active member create a container under an accessible parent. */
   async createContainer(actor: DomainActor, body: unknown) {
     const input = this.object(body);
     this.only(input, ['parentId', 'type', 'name', 'visibility']);
@@ -161,17 +163,13 @@ export class WorkflowsService {
     )
       throw new BadRequestException('Invalid visibility.');
     return this.prisma.$transaction(async (db) => {
-      await this.admin(actor, db);
-      const parent =
+      const fresh = await this.lock(actor, db);
+      const parentPath =
         input.parentId === null || input.parentId === undefined
           ? null
-          : (
-              await this.hierarchy.path(
-                actor.workspaceId,
-                this.uuid(input.parentId, 'parentId'),
-                db,
-              )
-            ).at(-1)!;
+          : await this.hierarchy.path(actor.workspaceId, this.uuid(input.parentId, 'parentId'), db);
+      if (parentPath) await this.permissions.assertPath(fresh, parentPath, db);
+      const parent = parentPath?.at(-1) ?? null;
       const type = input.type as ContainerType;
       if (
         (type === ContainerType.space && parent) ||
@@ -179,16 +177,25 @@ export class WorkflowsService {
         (type === ContainerType.list && parent?.type !== ContainerType.folder)
       )
         throw new BadRequestException('Container parent/type path is invalid.');
-      return this.containerView(
-        await this.hierarchy.create(
-          actor.workspaceId,
-          parent,
-          type,
-          name,
-          (input.visibility ?? Visibility.public) as Visibility,
-          db,
-        ),
+      const visibility = (input.visibility ?? Visibility.public) as Visibility;
+      const created = await this.hierarchy.create(
+        actor.workspaceId,
+        parent,
+        type,
+        name,
+        visibility,
+        fresh.userId,
+        db,
       );
+      if (fresh.role === 'member' && visibility === Visibility.private)
+        await this.permissions.putGrant(
+          actor.workspaceId,
+          created.id,
+          fresh.userId,
+          GrantMode.allow,
+          db,
+        );
+      return this.containerView(created);
     });
   }
 
@@ -243,10 +250,19 @@ export class WorkflowsService {
     });
   }
 
-  /** Shows direct access rules on a live container to an admin. */
+  /** Allows an admin or the accessible container's creator to manage direct rules. */
+  private async grantManager(actor: DomainActor, id: string, db: DomainDb) {
+    const path = await this.hierarchy.path(actor.workspaceId, id, db);
+    if (actor.role === 'admin') return { path, creator: false };
+    if (path.at(-1)?.createdByUserId !== actor.userId)
+      throw new ForbiddenException('Only the creator or an admin can manage access.');
+    await this.permissions.assertPath(actor, path, db);
+    return { path, creator: true };
+  }
+
+  /** Shows direct access rules on a live container to its creator or an admin. */
   async grants(actor: DomainActor, id: string) {
-    this.permissions.assertAdmin(actor);
-    await this.hierarchy.path(actor.workspaceId, id);
+    await this.grantManager(actor, id, this.prisma);
     return {
       items: (await this.permissions.grants(actor.workspaceId, id, this.prisma)).map((grant) => ({
         userId: grant.userId,
@@ -262,20 +278,40 @@ export class WorkflowsService {
     if (!Object.values(GrantMode).includes(input.mode as GrantMode))
       throw new BadRequestException('mode must be allow or deny.');
     return this.prisma.$transaction(async (db) => {
-      await this.admin(actor, db);
-      await this.hierarchy.path(actor.workspaceId, id, db);
-      const eligible = await this.auth.eligibleAssigneeIds(actor.workspaceId, [userId], db);
-      if (!eligible.length)
-        throw new BadRequestException('Target must be an active workspace member.');
+      const fresh = await this.lock(actor, db);
+      const { path, creator } = await this.grantManager(fresh, id, db);
+      const eligible = await this.auth.eligibleGrantTarget(actor.workspaceId, userId, db);
+      if (!eligible)
+        throw new BadRequestException('Grant target must be an active member, not an admin.');
+      if (creator) {
+        if (userId === fresh.userId)
+          throw new BadRequestException('You cannot change your own access rule.');
+        if (input.mode === GrantMode.allow) {
+          try {
+            await this.permissions.assertPath(
+              { userId, workspaceId: fresh.workspaceId, role: 'member' },
+              path.slice(0, -1),
+              db,
+            );
+          } catch (error) {
+            if (!(error instanceof ForbiddenException)) throw error;
+            throw new BadRequestException(
+              'Share the parent space or folder with this member first.',
+            );
+          }
+        }
+      }
       return this.permissions.putGrant(actor.workspaceId, id, userId, input.mode as GrantMode, db);
     });
   }
 
-  /** Removes a direct container rule as an admin write. */
+  /** Removes a direct rule as an admin or creator write. */
   async deleteGrant(actor: DomainActor, id: string, userId: string) {
     return this.prisma.$transaction(async (db) => {
-      await this.admin(actor, db);
-      await this.hierarchy.path(actor.workspaceId, id, db);
+      const fresh = await this.lock(actor, db);
+      const { creator } = await this.grantManager(fresh, id, db);
+      if (creator && userId === fresh.userId)
+        throw new BadRequestException('You cannot remove your own access rule.');
       await this.permissions.deleteGrant(actor.workspaceId, id, userId, db);
     });
   }
@@ -547,6 +583,7 @@ export class WorkflowsService {
         type: node.type,
         parentContainerId: node.parentContainerId,
         visibility: node.visibility,
+        createdByUserId: node.createdByUserId,
         position: node.position.toNumber(),
       })),
     };

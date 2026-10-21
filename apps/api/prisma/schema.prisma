@@ -93,11 +93,13 @@ model Container {
   type              ContainerType
   name              String
   visibility        Visibility              @default(public)
+  createdByUserId   String?                 @map("created_by_user_id") @db.Uuid
   position          Decimal                 @db.Decimal(18, 6)
   archivedAt        DateTime?               @map("archived_at") @db.Timestamptz(6)
   createdAt         DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
   workspace         Workspace               @relation(fields: [workspaceId], references: [id])
+  creatorMembership WorkspaceMembership?    @relation("container_creator", fields: [workspaceId, createdByUserId], references: [workspaceId, userId], onDelete: Restrict, onUpdate: Restrict)
   parent            Container?              @relation("container_parent", fields: [parentContainerId, workspaceId, parentType], references: [id, workspaceId, type], onDelete: Restrict, onUpdate: Restrict)
   children          Container[]             @relation("container_parent")
   grants            ContainerGrant[]
@@ -108,6 +110,7 @@ model Container {
   @@unique([id, workspaceId])
   @@unique([id, workspaceId, type])
   @@index([workspaceId, parentContainerId, position])
+  @@index([workspaceId, createdByUserId])
   @@map("containers")
 }
 
@@ -171,6 +174,7 @@ model WorkspaceMembership {
   user        User             @relation(fields: [userId], references: [id])
   grants      ContainerGrant[]
   assignments TaskAssignee[]
+  createdContainers Container[] @relation("container_creator")
 
   @@id([workspaceId, userId])
   @@map("workspace_memberships")
