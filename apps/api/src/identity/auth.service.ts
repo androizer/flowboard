@@ -69,41 +69,74 @@ export class AuthService {
   async refresh(rawToken: string): Promise<SessionTokens> {
     const tokenHash = hashRefresh(rawToken);
     const now = new Date();
-    return this.prisma.$transaction(
-      async (tx) => {
-        const token = await tx.refreshToken.findUnique({
+    let outcome: { replayed: true } | { replayed: false; tokens: SessionTokens };
+    try {
+      outcome = await this.prisma.$transaction(
+        async (tx) => {
+          const token = await tx.refreshToken.findUnique({
+            where: { tokenHash },
+            include: { session: true },
+          });
+          if (
+            !token ||
+            token.expiresAt <= now ||
+            token.session.expiresAt <= now ||
+            token.session.revokedAt
+          )
+            throw new UnauthorizedException('Refresh session is unavailable.');
+          if (token.consumedAt) {
+            await tx.authSession.update({
+              where: { id: token.sessionId },
+              data: { revokedAt: now },
+            });
+            // Return normally so Prisma commits family revocation. Throwing from
+            // the transaction callback would roll this security write back.
+            return { replayed: true as const };
+          }
+          const successor = createRefreshSecret();
+          await tx.refreshToken.update({ where: { id: token.id }, data: { consumedAt: now } });
+          await tx.refreshToken.create({
+            data: {
+              sessionId: token.sessionId,
+              parentTokenId: token.id,
+              tokenHash: hashRefresh(successor),
+              expiresAt: token.session.expiresAt,
+            },
+          });
+          return {
+            replayed: false as const,
+            tokens: {
+              accessToken: this.sign(
+                token.session.userId,
+                token.sessionId,
+                token.session.expiresAt,
+              ),
+              refreshToken: successor,
+              refreshExpiresAt: token.session.expiresAt,
+            },
+          };
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      );
+    } catch (error) {
+      const code = (error as { code?: unknown })?.code;
+      if (code === 'P2034' || code === 'P2002') {
+        const racedToken = await this.prisma.refreshToken.findUnique({
           where: { tokenHash },
           include: { session: true },
         });
-        if (
-          !token ||
-          token.expiresAt <= now ||
-          token.session.expiresAt <= now ||
-          token.session.revokedAt
-        )
-          throw new UnauthorizedException('Refresh session is unavailable.');
-        if (token.consumedAt) {
-          await tx.authSession.update({ where: { id: token.sessionId }, data: { revokedAt: now } });
+        if (racedToken?.consumedAt) {
+          await this.prisma.authSession.updateMany({
+            where: { id: racedToken.sessionId, revokedAt: null },
+            data: { revokedAt: new Date() },
+          });
           throw new UnauthorizedException('Refresh session is unavailable.');
         }
-        const successor = createRefreshSecret();
-        await tx.refreshToken.update({ where: { id: token.id }, data: { consumedAt: now } });
-        await tx.refreshToken.create({
-          data: {
-            sessionId: token.sessionId,
-            parentTokenId: token.id,
-            tokenHash: hashRefresh(successor),
-            expiresAt: token.session.expiresAt,
-          },
-        });
-        return {
-          accessToken: this.sign(token.session.userId, token.sessionId, token.session.expiresAt),
-          refreshToken: successor,
-          refreshExpiresAt: token.session.expiresAt,
-        };
-      },
-      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
-    );
+      }
+      throw error;
+    }
+    if (outcome.replayed) throw new UnauthorizedException('Refresh session is unavailable.');
+    return outcome.tokens;
   }
   async logout(sessionId: string) {
     await this.prisma.authSession.updateMany({

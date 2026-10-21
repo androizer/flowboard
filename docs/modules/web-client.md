@@ -10,15 +10,15 @@ React uses Ant Design for forms, table, tree, modal, and drawer. Day 2 uses nati
 
 ## 2. Ownership, data, and decisions
 
-| UI area             | Planned components and behavior                                                                                                                                                                             |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Login/session       | Implemented: AntD sign-in form, centralized in-memory session/API client, refresh-on-load, and sign out. Sign out all remains planned.                                                                      |
-| Shell/navigation    | Implemented: two-pane layout, Home entry, Tree, Breadcrumb, server-filtered collapsible hierarchy; Work overview is the default after login.                                                                |
-| Work overview       | Implemented: live visible-task/list/due-soon totals, per-list counts, and upcoming due dates; list and task links enter the existing Board view. Empty states handle no accessible lists or upcoming tasks. |
-| Kanban              | Implemented: resolved columns including empty ones; cards with title, assignees, priority, due date; desktop drag placement. Selecting a card opens a wide modal.                                           |
-| Task table          | Implemented: built-ins and resolved custom-field columns, due-date/priority sorting; selecting a row opens a right-side drawer.                                                                             |
-| Task detail/move    | Implemented: built-ins and inputs generated from resolved schema, task create/edit, saved version. Destination correction UI remains Day 3.                                                                 |
-| Admin configuration | Simple space/list status forms, field/options forms, container/grant forms, owner/inherited labels and safety errors.                                                                                       |
+| UI area             | Planned components and behavior                                                                                                                                                                                                                                 |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Login/session       | Implemented: AntD sign-in form, in-memory access token, refresh-on-load, and Axios 401 interceptor. It serializes refresh within/across tabs, retries each protected request once, and clears the local session if refresh fails. Sign out all remains planned. |
+| Shell/navigation    | Implemented: two-pane layout, Home entry, Tree, Breadcrumb, server-filtered collapsible hierarchy; Work overview is the default after login.                                                                                                                    |
+| Work overview       | Implemented: live visible-task/list/due-soon totals, per-list counts, and upcoming due dates; list and task links enter the existing Board view. Empty states handle no accessible lists or upcoming tasks.                                                     |
+| Kanban              | Implemented: resolved columns including empty ones; cards with title, assignees, priority, due date; desktop drag placement. Selecting a card opens a wide modal.                                                                                               |
+| Task table          | Implemented: built-ins and resolved custom-field columns, due-date/priority sorting; selecting a row opens a right-side drawer.                                                                                                                                 |
+| Task detail/move    | Implemented: built-ins and inputs generated from resolved schema, task create/edit, saved version. Destination correction UI remains Day 3.                                                                                                                     |
+| Admin configuration | Simple space/list status forms, field/options forms, container/grant forms, owner/inherited labels and safety errors.                                                                                                                                           |
 
 The client owns no business ER table. All stored task/config/membership data comes from the API. Access tokens remain in memory; refresh tokens are HttpOnly cookies managed by the browser. No token localStorage persistence or direct provider SDK use is allowed here for the MVP.
 
@@ -85,7 +85,7 @@ sequenceDiagram
     end
 ```
 
-Use Web Locks to coordinate refresh across tabs; a browser lacking it signs in again when its access token expires. Do not automatically retry refresh itself after an ambiguous network failure. Do not refresh on ordinary 403 validation/permission errors. Never retry an already-successful mutation just because rendering failed.
+The Axios response interceptor refreshes only protected requests that receive 401; it does not refresh on 403 or retry login/refresh. Protected logout requests can refresh and retry because authentication rejects them before logout runs. Each original request is retried at most once. Use a shared in-tab refresh promise and Web Locks to coordinate across tabs; a browser lacking Web Locks signs in again when its access token expires. Do not blindly retry refresh after an ambiguous network failure. Never retry an already-successful mutation just because rendering failed. Login/logout and session expiry notify other tabs to clear identity-scoped UI state; access tokens are not broadcast.
 
 Broadcast login/logout/identity changes across tabs. A different current identity must cancel prior in-flight work, clear selection/drawers/cache, and must not replay an old user's request with the new user's token. Other devices' sessions remain independent unless logout-all is used.
 

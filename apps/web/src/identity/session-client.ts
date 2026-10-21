@@ -1,3 +1,4 @@
+import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import type {
   BoardResponse,
   Container,
@@ -10,20 +11,155 @@ export type Actor = { userId: string; workspaceId: string; role: 'admin' | 'memb
 
 type AccessTokenResponse = { accessToken: string };
 type ApiError = Partial<ErrorEnvelope> & { message?: string };
+type RetriableRequest = InternalAxiosRequestConfig & {
+  _flowboardRetried?: boolean;
+  _flowboardSessionEpoch?: number;
+  _flowboardToken?: string;
+};
+
+const apiClient = axios.create({ withCredentials: true });
+let activeAccessToken: string | undefined;
+let sessionEpoch = 0;
+let refreshInFlight: Promise<string> | undefined;
+let onSessionExpired: (() => void) | undefined;
+const sessionChannel =
+  typeof BroadcastChannel === 'undefined' ? undefined : new BroadcastChannel('flowboard-session');
+
+function expireSession(broadcast = true) {
+  activeAccessToken = undefined;
+  sessionEpoch++;
+  if (broadcast) sessionChannel?.postMessage({ type: 'session-expired' });
+  onSessionExpired?.();
+}
+
+sessionChannel?.addEventListener('message', (event: MessageEvent<{ type?: string }>) => {
+  if (event.data?.type === 'session-expired' || event.data?.type === 'identity-changed')
+    expireSession(false);
+});
+
+export function setAccessToken(accessToken: string | undefined) {
+  activeAccessToken = accessToken;
+  sessionEpoch++;
+  sessionChannel?.postMessage({ type: 'identity-changed' });
+}
+
+export function setSessionExpiredHandler(handler: (() => void) | undefined) {
+  onSessionExpired = handler;
+}
+
+function errorMessage(error: AxiosError<ApiError>) {
+  return (
+    error.response?.data?.error?.message ??
+    error.response?.data?.message ??
+    'Something went wrong. Please try again.'
+  );
+}
+
+async function refreshWithLock(expectedEpoch = sessionEpoch): Promise<string> {
+  if (refreshInFlight) return refreshInFlight;
+  if (typeof navigator === 'undefined' || !navigator.locks) {
+    expireSession(false);
+    throw new Error('This browser cannot safely coordinate session refresh. Please sign in again.');
+  }
+  refreshInFlight = (async () => {
+    const lockResult = await navigator.locks.request('flowboard-refresh', async () => {
+      if (sessionEpoch !== expectedEpoch)
+        throw new Error('The signed-in user changed. Please retry your action.');
+      const response = await apiClient.post<AccessTokenResponse>('/v1/auth/refresh');
+      const accessToken = response.data.accessToken;
+      if (sessionEpoch !== expectedEpoch)
+        throw new Error('The signed-in user changed. Please retry your action.');
+      activeAccessToken = accessToken;
+      return accessToken;
+    });
+    return await lockResult;
+  })();
+  try {
+    return await refreshInFlight;
+  } catch (error) {
+    if (sessionEpoch === expectedEpoch) expireSession();
+    throw error;
+  } finally {
+    refreshInFlight = undefined;
+  }
+}
+
+apiClient.interceptors.request.use((request) => {
+  const tracked = request as RetriableRequest;
+  if (tracked._flowboardRetried && tracked._flowboardSessionEpoch !== sessionEpoch)
+    return Promise.reject(new Error('The signed-in user changed. Please retry your action.'));
+  if (!tracked._flowboardRetried) tracked._flowboardSessionEpoch = sessionEpoch;
+  const token = activeAccessToken;
+  if (token) {
+    tracked._flowboardToken = token;
+    tracked.headers.set('Authorization', `Bearer ${token}`);
+  }
+  return tracked;
+});
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError<ApiError>) => {
+    const request = error.config as RetriableRequest | undefined;
+    const url = request?.url ?? '';
+    const isLoginOrRefresh = url.includes('/v1/auth/login') || url.includes('/v1/auth/refresh');
+    if (
+      error.response?.status !== 401 ||
+      !request ||
+      isLoginOrRefresh ||
+      !request._flowboardToken
+    ) {
+      return Promise.reject(new Error(errorMessage(error)));
+    }
+    if (request._flowboardSessionEpoch !== sessionEpoch)
+      return Promise.reject(new Error('The signed-in user changed. Please retry your action.'));
+    if (request._flowboardRetried) {
+      expireSession();
+      return Promise.reject(new Error(errorMessage(error)));
+    }
+
+    if (!activeAccessToken) {
+      expireSession();
+      return Promise.reject(new Error(errorMessage(error)));
+    }
+
+    request._flowboardRetried = true;
+    try {
+      if (request._flowboardToken !== activeAccessToken) {
+        // Another request in this tab already refreshed the same session.
+        return await apiClient.request(request);
+      }
+      await refreshWithLock(request._flowboardSessionEpoch);
+      if (request._flowboardSessionEpoch !== sessionEpoch)
+        throw new Error('The signed-in user changed. Please retry your action.');
+      return await apiClient.request(request);
+    } catch (refreshError) {
+      return Promise.reject(
+        refreshError instanceof Error ? refreshError : new Error(errorMessage(error)),
+      );
+    }
+  },
+);
 
 async function api<T>(path: string, init: RequestInit = {}, accessToken?: string): Promise<T> {
-  const headers = new Headers(init.headers);
-  if (init.body) headers.set('Content-Type', 'application/json');
-  if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`);
-  const response = await fetch(path, { ...init, headers, credentials: 'include' });
-  if (!response.ok) {
-    const payload = (await response.json().catch(() => ({}))) as Partial<ApiError>;
-    throw new Error(
-      payload.error?.message ?? payload.message ?? 'Something went wrong. Please try again.',
-    );
+  const headers: Record<string, string> = {};
+  new Headers(init.headers).forEach((value, key) => (headers[key] = value));
+  if (init.body) headers['Content-Type'] = 'application/json';
+  // The interceptor replaces this captured token with the current in-memory
+  // token after refresh, while preserving per-session retry boundaries.
+  if (accessToken && !activeAccessToken) headers.Authorization = `Bearer ${accessToken}`;
+  try {
+    const response = await apiClient.request<T>({
+      url: path,
+      method: init.method ?? 'GET',
+      headers,
+      data: init.body,
+    });
+    return response.status === 204 ? (undefined as T) : response.data;
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    throw new Error('Something went wrong. Please try again.');
   }
-  if (response.status === 204) return undefined as T;
-  return response.json() as Promise<T>;
 }
 
 export function login(loginIdentifier: string, password: string) {
@@ -34,7 +170,7 @@ export function login(loginIdentifier: string, password: string) {
 }
 
 export function refresh() {
-  return api<AccessTokenResponse>('/v1/auth/refresh', { method: 'POST' });
+  return refreshWithLock().then((accessToken) => ({ accessToken }));
 }
 
 export function getCurrentActor(accessToken: string) {
@@ -46,6 +182,8 @@ export async function logout(accessToken: string) {
     await api<void>('/v1/auth/logout', { method: 'POST' }, accessToken);
   } catch {
     /* Local state still must be cleared. */
+  } finally {
+    setAccessToken(undefined);
   }
 }
 

@@ -2,7 +2,15 @@ import { ConfigProvider, Spin } from 'antd';
 import { useEffect, useState } from 'react';
 import { Dashboard } from '../dashboard/dashboard';
 import { LoginScreen } from '../identity/login-screen';
-import { Actor, getCurrentActor, login, logout, refresh } from '../identity/session-client';
+import {
+  Actor,
+  getCurrentActor,
+  login,
+  logout,
+  refresh,
+  setAccessToken,
+  setSessionExpiredHandler,
+} from '../identity/session-client';
 
 type SessionState =
   | { status: 'loading' }
@@ -14,6 +22,9 @@ export function App() {
 
   useEffect(() => {
     let active = true;
+    setSessionExpiredHandler(() => {
+      if (active) setSession({ status: 'signed-out' });
+    });
     void (async () => {
       try {
         const { accessToken } = await refresh();
@@ -25,11 +36,13 @@ export function App() {
     })();
     return () => {
       active = false;
+      setSessionExpiredHandler(undefined);
     };
   }, []);
 
   async function signIn(loginIdentifier: string, password: string) {
     const { accessToken } = await login(loginIdentifier, password);
+    setAccessToken(accessToken);
     const actor = await getCurrentActor(accessToken);
     setSession({ status: 'signed-in', actor, accessToken });
   }

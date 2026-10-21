@@ -22,3 +22,8 @@
 ## 2026-10-21 — Tooling integration
 
 - Added Nx-inferred ESLint tasks and Prettier commands. Corrected the initial setup by aligning `@nx/eslint` and `@nx/eslint-plugin` to the lockfile-resolved Nx 20.8.4 version; the Nx documentation requires matching versions.
+
+## 2026-10-21 — Authentication resilience correction
+
+- Review found refresh-token replay revocation was updated and then rolled back because the code threw inside the Prisma transaction. Changed the transaction to return a replay outcome, commit the session revocation, then return HTTP 401.
+- Replaced the browser `fetch` wrapper with Axios interceptors per the user's direction. The interceptor refreshes protected 401s through the existing refresh route, serializes refresh with an in-tab promise and Web Locks, retries each original request once, and signs out on refresh failure. Login/refresh are excluded; protected logout requests can refresh before retrying. Tokens remain in memory and are not broadcast between tabs.
