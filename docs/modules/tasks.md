@@ -28,6 +28,7 @@ erDiagram
         uuid id PK
         uuid workspace_id FK
         uuid primary_list_id FK
+        string primary_list_type "Always list"
         uuid created_by_user_id FK
         string title
         string description "Nullable"
@@ -69,6 +70,8 @@ erDiagram
 | custom values     | One row per task/definition; missing optional row means no answer; null patches remove rows.       |
 
 Workspace-scoped composite FKs protect list, task, assignment membership, and definition scope. Unique task/user and task/definition pairs prevent duplicate links/answers. Creator is a stable internal user ID, never a provider subject.
+
+`primary_list_type` is an internal key defaulted to `list` and fixed by a database check. The `(primary_list_id, workspace_id, primary_list_type)` FK requires an actual list in that workspace. Assignments and answers also reference `(task_id, workspace_id)`; answers additionally reference `(field_definition_id, workspace_id)`. The workflow still checks active membership, access, effective status, and inherited field eligibility, which cannot be inferred from these structural FKs alone.
 
 Tasks archive rather than physically delete. Parent-container archival also hides the task. Retained archived tasks remain visible to internal config-usage checks. Public restore/subtasks/secondary memberships are outside scope.
 
@@ -158,7 +161,7 @@ Build the task repository/use cases and form/query integration in Day 2. Finish 
 | ------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | TASK-01 | Valid create -> one task/list, version 1, valid assignments/values.                                                                         |
 | TASK-02 | Blank/over-500 title, invalid enum/date, inactive/foreign assignee -> 400.                                                                  |
-| TASK-03 | Attempt direct folder/space task placement -> reject.                                                                                       |
+| TASK-03 | API or direct DB task placement under folder/space or foreign-workspace list -> reject.                                                     |
 | TASK-04 | Update omits value vs explicit null -> preserve vs clear per field validation.                                                              |
 | TASK-05 | Stale expectedVersion -> 409, no partial task/answer writes.                                                                                |
 | TASK-06 | Status change/reorder -> correct column and persisted dense placement; no list change.                                                      |

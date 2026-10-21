@@ -10,6 +10,8 @@ A person can guess a task URL even if a list is hidden in the sidebar. Container
 
 Use one workspace and the strict path workspace -> space -> folder -> list -> task. Store workspace separately and other containers in one table. Tasks have exactly one primary list. Archive rather than cascade-delete. Support sibling reordering, with no cross-parent container moves in this MVP.
 
+Enforce the fixed parent and task-list types with row checks and typed composite foreign keys. Workspace-scoped references include the workspace ID in their foreign keys; workflows still check active ancestry, access, and effective configuration before writes.
+
 Roles belong to workspace memberships, not global users or JWT claims. Active admins bypass grants. Members need access along the whole ancestor path; deny wins, private nodes need an allow at/before that node, and child grants cannot open a blocked parent. Members can edit tasks in accessible lists; container/config/grant administration is admin-only.
 
 ## Why

@@ -22,15 +22,15 @@ This library owns connection/transaction infrastructure and bootstrap tooling, n
 
 The supported command is `docker compose up --build`. Include `.env.example`, pinned tooling/lockfile, immutable installs, and multi-stage images. Local-demo is an explicit runtime setting, separate from NODE_ENV, so an optimized Docker build is still a local demo. No actual production keys/passwords are committed. A developer may opt into loopback-only database-client access through an untracked Compose override; the root README owns the exact local setup and connection values.
 
-| Schema concern       | Rule                                                                                                    |
-| -------------------- | ------------------------------------------------------------------------------------------------------- |
-| Ownership            | Each domain repository accesses its own tables; shared transactions do not expose sibling repositories. |
-| Scope                | Composite FKs keep parents/lists/members/definitions in the same workspace.                             |
-| Null owners          | Partial unique constraints distinguish a single workspace default set from local container sets.        |
-| Identity/token chain | Composite same-user session identity and same-session refresh parent constraints; unique successor.     |
-| Time                 | PostgreSQL timestamptz in UTC for instants; field dates are validated YYYY-MM-DD values.                |
+| Schema concern       | Rule                                                                                                                                                               |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Ownership            | Each domain repository accesses its own tables; shared transactions do not expose sibling repositories.                                                            |
+| Scope and hierarchy  | Composite FKs keep parents/lists/members/definitions in the same workspace; typed FKs and row checks enforce the strict container path and task-to-list placement. |
+| Null owners          | Partial unique constraints distinguish a single workspace default set from local container sets.                                                                   |
+| Identity/token chain | Composite same-user session identity and same-session refresh parent constraints; unique successor.                                                                |
+| Time                 | PostgreSQL timestamptz in UTC for instants; field dates are validated YYYY-MM-DD values.                                                                           |
 
-Use checked-in Prisma migrations and SQL for partial indexes/constraints that need explicit SQL. Do not rely only on application checks for same-user/same-workspace relationships. Cross-row type/category/schema rules remain in application workflows under the domain transaction.
+Use checked-in Prisma migrations and SQL for partial indexes/constraints that need explicit SQL. Do not rely only on application checks for same-user/same-workspace relationships. The strict parent and list types are database constraints; effective status, inherited field eligibility, archive/access, and answer validity remain in application workflows under the domain transaction. The scope migration checks existing rows before adding constraints and stops without modifying stored relationships if any are invalid.
 
 ## 3. Connections and interfaces
 
@@ -44,7 +44,7 @@ Use checked-in Prisma migrations and SQL for partial indexes/constraints that ne
 
 Local Compose has one API/bootstrap instance; run its initialization sequentially before listening. Production horizontal deployment would move migrations/seed to one release job before starting replicas. Do not claim that scaling Compose API replicas makes concurrent bootstrap safe automatically.
 
-Indexes cover credentials and issuer/subject lookup, session/user/expiry, refresh hash/session/parent, grant member/resource, container parent/order, task list/status/position, due date, and config owner. Add custom-value indexes only when an actual filter query exists; custom-field filters are not scheduled.
+Indexes cover credentials and issuer/subject lookup, session/user/expiry, refresh hash/session/parent, grant member/resource, container parent/order, task list/status/position, due date, and config owner. Task field values also index `(field_definition_id, workspace_id)` for FK maintenance. Add other custom-value indexes only when an actual filter query exists; custom-field filters are not scheduled.
 
 ## 4. Workflows and sequence diagrams
 
@@ -118,16 +118,16 @@ Use fixed UUIDs and stable option IDs in the seed, one seed-version marker, and 
 
 Build Compose, schema/constraints, signing bootstrap, and seed in Day 1; share transaction contexts with domain code in Day 2; verify clean startup/restart and final Docker test targets in Day 4. No Redis/worker/queue is required.
 
-| ID     | Test TODO: setup/action -> expected result                                                              |
-| ------ | ------------------------------------------------------------------------------------------------------- |
-| RUN-01 | Clean machine with Docker only -> one command reaches ready and seeded UI.                              |
-| RUN-02 | Restart after edits -> data and signing secret persist; no duplicate seed or password overwrite.        |
-| RUN-03 | Migration/seed failure -> no misleading readiness; seed transaction does not partially commit.          |
-| RUN-04 | Composite-FK/unique violations -> same-workspace/user/session constraints enforced by DB.               |
-| RUN-05 | Multi-owner write fails midway -> all task/config data rolls back.                                      |
-| RUN-06 | Refresh replay -> revocation survives HTTP 401, unlike an ordinary rolled-back error.                   |
-| RUN-07 | Production missing keys or demo-seed enabled -> fail closed; no secret in logs/artifacts.               |
-| RUN-08 | Board response under config write -> internally consistent snapshot; no cross-request snapshot promise. |
-| RUN-09 | Final test command -> PostgreSQL-backed backend tests and browser tests run without host tooling.       |
+| ID     | Test TODO: setup/action -> expected result                                                                                   |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| RUN-01 | Clean machine with Docker only -> one command reaches ready and seeded UI.                                                   |
+| RUN-02 | Restart after edits -> data and signing secret persist; no duplicate seed or password overwrite.                             |
+| RUN-03 | Migration/seed failure -> no misleading readiness; seed transaction does not partially commit.                               |
+| RUN-04 | Composite-FK/type/unique violations -> same-workspace/user/session, strict parent, and task-list constraints enforced by DB. |
+| RUN-05 | Multi-owner write fails midway -> all task/config data rolls back.                                                           |
+| RUN-06 | Refresh replay -> revocation survives HTTP 401, unlike an ordinary rolled-back error.                                        |
+| RUN-07 | Production missing keys or demo-seed enabled -> fail closed; no secret in logs/artifacts.                                    |
+| RUN-08 | Board response under config write -> internally consistent snapshot; no cross-request snapshot promise.                      |
+| RUN-09 | Final test command -> PostgreSQL-backed backend tests and browser tests run without host tooling.                            |
 
 When changing startup, constraints, or lock order, update runtime, affected owner docs, [ADR-0005](../adr/0005-delivery-and-consistency.md), `.env.example`/Compose/migrations when code exists, and clean-run TODOs. API processes are stateless with database-backed sessions; future replicas share keys and need shared throttling and a single migration job.

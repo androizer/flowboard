@@ -87,6 +87,9 @@ model Container {
   id                String                  @id @default(uuid()) @db.Uuid
   workspaceId       String                  @map("workspace_id") @db.Uuid
   parentContainerId String?                 @map("parent_container_id") @db.Uuid
+  /// Matches the actual parent's type through a composite FK. SQL CHECK fixes
+  /// the allowed parent type for each child type; spaces have no parent.
+  parentType        ContainerType?          @map("parent_type")
   type              ContainerType
   name              String
   visibility        Visibility              @default(public)
@@ -95,7 +98,7 @@ model Container {
   createdAt         DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
   workspace         Workspace               @relation(fields: [workspaceId], references: [id])
-  parent            Container?              @relation("container_parent", fields: [parentContainerId], references: [id])
+  parent            Container?              @relation("container_parent", fields: [parentContainerId, workspaceId, parentType], references: [id, workspaceId, type], onDelete: Restrict, onUpdate: Restrict)
   children          Container[]             @relation("container_parent")
   grants            ContainerGrant[]
   statusSet         StatusSet?
@@ -103,6 +106,7 @@ model Container {
   tasks             Task[]
 
   @@unique([id, workspaceId])
+  @@unique([id, workspaceId, type])
   @@index([workspaceId, parentContainerId, position])
   @@map("containers")
 }
@@ -221,7 +225,7 @@ model ContainerGrant {
   userId      String              @map("user_id") @db.Uuid
   mode        GrantMode
   workspace   Workspace           @relation(fields: [workspaceId], references: [id])
-  container   Container           @relation(fields: [containerId], references: [id])
+  container   Container           @relation(fields: [containerId, workspaceId], references: [id, workspaceId], onDelete: Restrict, onUpdate: Restrict)
   membership  WorkspaceMembership @relation(fields: [workspaceId, userId], references: [workspaceId, userId])
 
   @@unique([workspaceId, containerId, userId])
@@ -238,13 +242,14 @@ model ContainerGrant {
 model StatusSet {
   id               String     @id @default(uuid()) @db.Uuid
   workspaceId      String     @map("workspace_id") @db.Uuid
-  ownerContainerId String?    @unique @map("owner_container_id") @db.Uuid
+  ownerContainerId String?    @map("owner_container_id") @db.Uuid
   createdAt        DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
   workspace        Workspace  @relation(fields: [workspaceId], references: [id])
-  owner            Container? @relation(fields: [ownerContainerId], references: [id])
+  owner            Container? @relation(fields: [ownerContainerId, workspaceId], references: [id, workspaceId], onDelete: Restrict, onUpdate: Restrict)
   statuses         Status[]
 
+  @@unique([ownerContainerId, workspaceId])
   @@index([workspaceId])
   @@map("status_sets")
 }
@@ -283,11 +288,12 @@ model CustomFieldDefinition {
   createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
   workspace        Workspace           @relation(fields: [workspaceId], references: [id])
-  owner            Container           @relation(fields: [ownerContainerId], references: [id])
+  owner            Container           @relation(fields: [ownerContainerId, workspaceId], references: [id, workspaceId], onDelete: Restrict, onUpdate: Restrict)
   options          CustomFieldOption[]
   values           TaskFieldValue[]
 
   @@unique([workspaceId, key])
+  @@unique([id, workspaceId])
   @@index([ownerContainerId, position])
   @@map("custom_field_definitions")
 }
@@ -314,6 +320,8 @@ model Task {
   id              String           @id @default(uuid()) @db.Uuid
   workspaceId     String           @map("workspace_id") @db.Uuid
   primaryListId   String           @map("primary_list_id") @db.Uuid
+  /// Fixed to list by a SQL CHECK and checked against the target container.
+  primaryListType ContainerType    @default(list) @map("primary_list_type")
   createdByUserId String           @map("created_by_user_id") @db.Uuid
   title           String
   description     String?
@@ -326,11 +334,12 @@ model Task {
   createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
   workspace       Workspace        @relation(fields: [workspaceId], references: [id])
-  list            Container        @relation(fields: [primaryListId], references: [id])
+  list            Container        @relation(fields: [primaryListId, workspaceId, primaryListType], references: [id, workspaceId, type], onDelete: Restrict, onUpdate: Restrict)
   creator         User             @relation(fields: [createdByUserId], references: [id])
   assignees       TaskAssignee[]
   fieldValues     TaskFieldValue[]
 
+  @@unique([id, workspaceId])
   @@index([primaryListId, statusKey, position])
   @@index([workspaceId, dueDate])
   @@map("tasks")
@@ -341,7 +350,7 @@ model TaskAssignee {
   taskId      String              @map("task_id") @db.Uuid
   userId      String              @map("user_id") @db.Uuid
   workspaceId String              @map("workspace_id") @db.Uuid
-  task        Task                @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  task        Task                @relation(fields: [taskId, workspaceId], references: [id, workspaceId], onDelete: Cascade, onUpdate: Restrict)
   user        User                @relation(fields: [userId], references: [id])
   membership  WorkspaceMembership @relation(fields: [workspaceId, userId], references: [workspaceId, userId])
 
@@ -356,9 +365,10 @@ model TaskFieldValue {
   fieldDefinitionId String                @map("field_definition_id") @db.Uuid
   workspaceId       String                @map("workspace_id") @db.Uuid
   value             Json
-  task              Task                  @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  definition        CustomFieldDefinition @relation(fields: [fieldDefinitionId], references: [id])
+  task              Task                  @relation(fields: [taskId, workspaceId], references: [id, workspaceId], onDelete: Cascade, onUpdate: Restrict)
+  definition        CustomFieldDefinition @relation(fields: [fieldDefinitionId, workspaceId], references: [id, workspaceId], onDelete: Restrict, onUpdate: Restrict)
 
   @@id([taskId, fieldDefinitionId])
+  @@index([fieldDefinitionId, workspaceId], map: "task_field_values_definition_scope_idx")
   @@map("task_field_values")
 }

@@ -27,3 +27,8 @@
 
 - Review found refresh-token replay revocation was updated and then rolled back because the code threw inside the Prisma transaction. Changed the transaction to return a replay outcome, commit the session revocation, then return HTTP 401.
 - Replaced the browser `fetch` wrapper with Axios interceptors per the user's direction. The interceptor refreshes protected 401s through the existing refresh route, serializes refresh with an in-tab promise and Web Locks, retries each original request once, and signs out on refresh failure. Login/refresh are excluded; protected logout requests can refresh before retrying. Tokens remain in memory and are not broadcast between tabs.
+
+## 2026-10-21 — Workspace scope and hierarchy constraints
+
+- Corrected the Day 1 database gap where single-column foreign keys allowed cross-workspace references and non-list task placement. Added composite workspace/type keys, strict hierarchy and task-list checks, and a migration that stops on inconsistent existing rows instead of silently changing relationships.
+- Kept effective status, inherited custom-field, access, and archive checks in their owning workflows. Prisma required the optional one-to-one status-set owner to use a composite unique key; updated the schema and migration together.

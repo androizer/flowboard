@@ -107,6 +107,7 @@ erDiagram
         uuid id PK
         uuid workspace_id FK
         uuid parent_container_id FK "Nullable for spaces"
+        string parent_type "Null for spaces; space for folders; folder for lists"
         string type "space, folder, list"
         string name
         string visibility "public, private"
@@ -191,6 +192,7 @@ erDiagram
         uuid id PK
         uuid workspace_id FK
         uuid parent_container_id FK "Nullable for spaces"
+        string parent_type "Null for spaces; space for folders; folder for lists"
         string type "space, folder, list"
         string name
         string visibility "public, private"
@@ -219,6 +221,7 @@ erDiagram
         uuid id PK
         uuid workspace_id FK
         uuid primary_list_id FK
+        string primary_list_type "Always list"
         uuid created_by_user_id FK
         string title
         string description "Nullable"

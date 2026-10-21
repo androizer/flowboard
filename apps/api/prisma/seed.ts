@@ -23,6 +23,11 @@ const containers = {
   strategy: id(27),
   roadmap: id(28),
 };
+const parentTypeFor: Record<ContainerType, ContainerType | null> = {
+  [ContainerType.space]: null,
+  [ContainerType.folder]: ContainerType.space,
+  [ContainerType.list]: ContainerType.folder,
+};
 async function main() {
   if (process.env.FLOWBOARD_DEMO_MODE !== 'true')
     throw new Error('Demo seed is disabled outside local demo mode.');
@@ -84,6 +89,7 @@ async function main() {
           id: containers[key],
           workspaceId: workspace,
           type,
+          parentType: parentTypeFor[type],
           name,
           parentContainerId,
           position,

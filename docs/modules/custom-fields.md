@@ -47,6 +47,8 @@ erDiagram
 
 Definitions attach to space/folder/list, not workspace defaults. Resolve in that ancestor order, collecting definitions with no overrides. Keys are immutable and unique across the workspace, including sibling branches. This deliberately rejects duplicate semantic names/keys instead of introducing collision precedence. Display labels may repeat, but keys may not.
 
+The owner reference uses `(owner_container_id, workspace_id)` so a definition cannot claim a container in another workspace. Task values pair their workspace with both task and definition IDs; effective ancestry and option validity remain workflow checks.
+
 Order fields by owner level (space, folder, list), then configured position and stable ID. Inherited fields are edited at their owning container. The UI identifies that owner.
 
 | Type          | Accepted answer                                | Required empty check                   |

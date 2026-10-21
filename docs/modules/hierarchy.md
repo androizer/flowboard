@@ -40,6 +40,7 @@ erDiagram
         uuid id PK
         uuid workspace_id FK
         uuid parent_container_id FK "Nullable for spaces"
+        string parent_type "Null for spaces; space for folders; folder for lists"
         string type "space, folder, list"
         string name
         string visibility "public, private"
@@ -52,15 +53,17 @@ erDiagram
 
 <!-- schema:end -->
 
-| Rule                  | Plain explanation                                                                                                     |
-| --------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Workspace is separate | Spaces link through workspace_id and have no parent container. The API exposes the workspace as their parent.         |
-| Strict parent types   | A folder needs a space; a list needs a folder. No skipped levels, folder nesting, or task container children.         |
-| Same workspace        | Parent/child IDs must share workspace_id, enforced with a composite FK plus type validation.                          |
-| Stable identity       | Renaming/reordering does not change IDs or ancestor config ownership.                                                 |
-| Archival              | Mark a container archived. Descendants become unavailable through ancestor checks; preserve their rows/config/values. |
+| Rule                  | Plain explanation                                                                                                                                   |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Workspace is separate | Spaces link through workspace_id and have no parent container. The API exposes the workspace as their parent.                                       |
+| Strict parent types   | A folder needs a space; a list needs a folder. A row check fixes `parent_type` from its own type, and the parent FK matches the actual parent type. |
+| Same workspace        | `(parent_container_id, workspace_id, parent_type)` references one container's `(id, workspace_id, type)`. No cross-workspace parent.                |
+| Stable identity       | Renaming/reordering does not change IDs or ancestor config ownership.                                                                               |
+| Archival              | Mark a container archived. Descendants become unavailable through ancestor checks; preserve their rows/config/values.                               |
 
 Only one workspace is supported in the MVP. The root is seeded and may be renamed; creating a second tenant/workspace is outside scope. Space/folder/list CRUD is available through workflows. An empty folder or space is valid. Normal tree responses omit archived branches.
+
+`parent_type` is an internal relation key, never a client input. Hierarchy-owned writes set it from the child type; the database check and FK reject a missing, forged, or mismatched value. This also prevents cycles because each non-root edge goes exactly one level toward a space. Existing invalid rows stop the migration for deliberate repair; no row is silently reparented. Physical parent deletion is restricted; archive retains the hierarchy.
 
 Sibling order is scoped to one parent (spaces use the workspace as the sibling group). Reordering cannot change parentId. Use simple server-assigned dense positions in this small dataset; decimal storage permits whole-number positions. Recalculate the affected sibling group transactionally, with ID as a deterministic query tie-breaker.
 
@@ -134,15 +137,15 @@ Repeated archive can return the same archived result without duplicating effects
 
 Build basic schema/ancestry in Day 1, consumption by resolvers/tasks in Day 2, and container administration/reorder UI in Day 3.
 
-| ID      | Test TODO: setup/action -> expected result                                                   |
-| ------- | -------------------------------------------------------------------------------------------- |
-| HIER-01 | Create valid space/folder/list -> correct single parent and workspace.                       |
-| HIER-02 | List under space, folder under folder, or parent in another workspace -> reject.             |
-| HIER-03 | Renaming parent -> child IDs and references unchanged.                                       |
-| HIER-04 | Reorder siblings -> stable persisted group order; cannot move parent.                        |
-| HIER-05 | Archive folder -> tree/list/task normal access excludes all descendants, rows remain stored. |
-| HIER-06 | Safety query for retained archived data -> still finds configuration usage.                  |
-| HIER-07 | Empty container -> valid response with no children.                                          |
-| HIER-08 | Member attempts container mutation -> 403; second workspace creation unsupported.            |
+| ID      | Test TODO: setup/action -> expected result                                                                                    |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| HIER-01 | Create valid space/folder/list -> correct single parent and workspace.                                                        |
+| HIER-02 | API or direct DB write with list under space, folder under folder, forged parent_type, or foreign-workspace parent -> reject. |
+| HIER-03 | Renaming parent -> child IDs and references unchanged.                                                                        |
+| HIER-04 | Reorder siblings -> stable persisted group order; cannot move parent.                                                         |
+| HIER-05 | Archive folder -> tree/list/task normal access excludes all descendants, rows remain stored.                                  |
+| HIER-06 | Safety query for retained archived data -> still finds configuration usage.                                                   |
+| HIER-07 | Empty container -> valid response with no children.                                                                           |
+| HIER-08 | Member attempts container mutation -> 403; second workspace creation unsupported.                                             |
 
 For a parent/type/archive change, update hierarchy, permissions, status/field ancestry callers, task/move examples, [ADR-0002](../adr/0002-hierarchy-and-access.md), and schema constraints. Never add nesting by only relaxing one UI control.

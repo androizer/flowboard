@@ -40,7 +40,7 @@ erDiagram
 
 <!-- schema:end -->
 
-One default set per workspace and at most one local set per space/folder/list. Partial unique constraints distinguish a null workspace-default owner from a local owner. Unique `(status_set_id, key)`; keys remain stable when labels/colors/order change. Categories are not_started, active, done, closed. Every complete set needs at least one not_started, active, and done; closed is optional.
+One default set per workspace and at most one local set per space/folder/list. A partial unique index covers null workspace-default owners; `(owner_container_id, workspace_id)` is unique for local owners and a composite FK requires that owner to be in the set's workspace. Unique `(status_set_id, key)`; keys remain stable when labels/colors/order change. Categories are not_started, active, done, closed. Every complete set needs at least one not_started, active, and done; closed is optional.
 
 | Decision              | Behavior                                                                               |
 | --------------------- | -------------------------------------------------------------------------------------- |
