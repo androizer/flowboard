@@ -111,7 +111,7 @@ export class TasksService {
     db: DomainDb,
   ) {
     const position = await this.nextPosition(args.listId, args.statusKey, db);
-    return db.task.create({
+    const task = await db.task.create({
       data: {
         workspaceId: args.workspaceId,
         primaryListId: args.listId,
@@ -122,19 +122,26 @@ export class TasksService {
         priority: args.priority,
         dueDate: args.dueDate,
         position,
-        assignees: {
-          create: args.assigneeIds.map((userId) => ({ userId, workspaceId: args.workspaceId })),
-        },
-        fieldValues: {
-          create: args.values.map((item) => ({
-            fieldDefinitionId: item.definitionId,
-            workspaceId: args.workspaceId,
-            value: item.value,
-          })),
-        },
       },
-      include: taskInclude,
     });
+    if (args.assigneeIds.length)
+      await db.taskAssignee.createMany({
+        data: args.assigneeIds.map((userId) => ({
+          taskId: task.id,
+          userId,
+          workspaceId: args.workspaceId,
+        })),
+      });
+    if (args.values.length)
+      await db.taskFieldValue.createMany({
+        data: args.values.map((item) => ({
+          taskId: task.id,
+          fieldDefinitionId: item.definitionId,
+          workspaceId: args.workspaceId,
+          value: item.value,
+        })),
+      });
+    return (await this.get(task.id, db))!;
   }
 
   /** Replaces a task’s assignees and answers and increments its version. */
@@ -153,7 +160,7 @@ export class TasksService {
     },
     db: DomainDb,
   ) {
-    return db.task.update({
+    await db.task.update({
       where: { id: task.id },
       data: {
         primaryListId: args.listId,
@@ -164,21 +171,28 @@ export class TasksService {
         dueDate: args.dueDate,
         position: args.position ?? task.position,
         version: { increment: 1 },
-        assignees: {
-          deleteMany: {},
-          create: args.assigneeIds.map((userId) => ({ userId, workspaceId: task.workspaceId })),
-        },
-        fieldValues: {
-          deleteMany: {},
-          create: args.values.map((item) => ({
-            fieldDefinitionId: item.definitionId,
-            workspaceId: task.workspaceId,
-            value: item.value,
-          })),
-        },
       },
-      include: taskInclude,
     });
+    await db.taskAssignee.deleteMany({ where: { taskId: task.id } });
+    if (args.assigneeIds.length)
+      await db.taskAssignee.createMany({
+        data: args.assigneeIds.map((userId) => ({
+          taskId: task.id,
+          userId,
+          workspaceId: task.workspaceId,
+        })),
+      });
+    await db.taskFieldValue.deleteMany({ where: { taskId: task.id } });
+    if (args.values.length)
+      await db.taskFieldValue.createMany({
+        data: args.values.map((item) => ({
+          taskId: task.id,
+          fieldDefinitionId: item.definitionId,
+          workspaceId: task.workspaceId,
+          value: item.value,
+        })),
+      });
+    return (await this.get(task.id, db))!;
   }
 
   /** Places a task in a column and compacts both affected columns. Returns null for an invalid anchor. */

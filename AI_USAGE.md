@@ -50,3 +50,9 @@
 - Corrected a local Prisma generation issue during static verification: the checked-in schema had a new `parent_type` relation key while the installed generated client was stale. Regenerated from the repository schema using a writable temporary Prisma engine cache; no schema decision changed.
 - Deferred the second-channel cookbook/Swagger completion at the user's request and documented its remaining proof steps. No executable application tests were added for Day 3; new edge cases are TODO rows for Day 4.
 - Ran a disposable Docker/PostgreSQL manual API smoke check: Alice admin writes, Bob denial/member write rejection, 409 blockers for unsafe status reset and required field creation, strict container creation, local field creation, and inherited status preview. Removed the isolated containers and volumes afterward. This is not executable test coverage or a complete browser review.
+
+## 2026-10-21 — Day 3 browser runtime correction
+
+- Browser and HTTP review exposed HTTP 500 on task edit, corrected move, and task creation. The error was a Prisma client validation failure in nested assignment/answer writes. Replaced the nested writes with ordered task, assignment, and answer operations inside the existing workflow transaction; browser edit/move/create and archived configuration safety probes passed afterward.
+- A direct Prisma diagnostic write was rejected by automatic approval review because it would delete and recreate task values just to reproduce the error. Continued with the authorized browser/API journeys, read-only source inspection, and isolated runtime checks instead.
+- Recorded the manual pass, controlled concurrency and inactive-membership probes, and remaining Day 4 executable-test cases in [the runtime review](docs/day3-runtime-review.md). No passing application test suite was invented.

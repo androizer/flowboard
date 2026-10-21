@@ -1,6 +1,6 @@
 # Module: web client
 
-Status: Day 1–2 login/task views and Day 3 admin configuration, grants, hierarchy, and move correction UI added; runtime verification pending. Code owner: `apps/web/src`. Navigation: [hub](../README.md), [API/contracts](api-contracts.md), [identity](identity.md), [ADR-0001](../adr/0001-modular-monolith.md).
+Status: Day 1–2 login/task views and Day 3 admin configuration, grants, hierarchy, and move correction UI added; [manual Day 3 admin runtime review](../day3-runtime-review.md) completed, other web TODOs and Day 4 executable tests pending. Code owner: `apps/web/src`. Navigation: [hub](../README.md), [API/contracts](api-contracts.md), [identity](identity.md), [ADR-0001](../adr/0001-modular-monolith.md).
 
 ## 1. Purpose and example
 

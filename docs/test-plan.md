@@ -1,6 +1,6 @@
 # Deferred application test plan
 
-Status: TODO only. No application tests have been implemented. Navigation: [hub](README.md), [requirements](requirements.md), [roadmap](implementation-plan.md).
+Status: executable application tests remain TODO only. [Day 3 manual runtime evidence](day3-runtime-review.md) does not replace them. Navigation: [hub](README.md), [requirements](requirements.md), [roadmap](implementation-plan.md).
 
 ## 1. Timing and meaning
 
