@@ -91,6 +91,7 @@ To keep the MVP focused, bulk edits, search, live updates, and a separate CLI we
 ## Checks
 
 ```bash
+make test  # isolated PostgreSQL API tests and browser journeys in Docker
 yarn lint
 yarn typecheck
 yarn format:check

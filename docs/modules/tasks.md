@@ -1,6 +1,6 @@
 # Module: tasks
 
-Status: Day 2 reads, create/edit/archive, placement, move, answers, and assignments implemented; manual runtime review verified browser create/edit/move after a persistence fix, executable application tests pending. Code owner: `apps/api/src/tasks`. Navigation: [hub](../README.md), [workflows](workflows.md), [fields](custom-fields.md), [statuses](statuses.md).
+Status: reads, create/edit/archive, placement, move, answers, and assignments implemented; manual runtime review verified browser create/edit/move after a persistence fix, and executable test coverage is partial. Code owner: `apps/api/src/tasks`. Navigation: [hub](../README.md), [workflows](workflows.md), [fields](custom-fields.md), [statuses](statuses.md), [test coverage](../test-plan.md).
 
 ## 1. Purpose and example
 

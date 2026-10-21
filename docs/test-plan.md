@@ -1,14 +1,14 @@
-# Deferred application test plan
+# Application test plan and coverage
 
-Status: executable application tests remain TODO only. Manual runtime review does not replace them. Navigation: [hub](README.md), [requirements](requirements.md).
+Status: 66 API and 15 browser tests pass in the isolated Compose stack after their TSX conversion. Scenario coverage remains incomplete. Navigation: [hub](README.md), [requirements](requirements.md).
 
-## 1. Timing and meaning
+## 1. Scope and meaning
 
-During Days 1-3, maintain scenarios and use manual smoke checks, documentation checks, types, lint, boundaries, and builds. After Day 3 feature freeze, implement the required backend/frontend tests. Do not create empty passing suites or report TODOs as coverage.
+The scenario rows in each module are the coverage target. The runnable `.tsx` suites are [API and database tests](../tests/api) and [browser journeys](../tests/web). A shared [TypeScript fixture](../tests/api/support.ts) seeds and resets data. The suites use an isolated PostgreSQL database and Playwright browser in a separate Compose project. Test titles name the scenario IDs they exercise; a named ID is not proof that every subcase in its row is covered.
 
 Each module owns its detailed scenario rows. This page indexes them without duplicating their expected behavior. When rules change, update the owner scenarios and this index only if the group changes.
 
-The current backlog has 139 scenario rows, not a requirement for 139 separate test files. Parameterized tests and shared fixtures can cover related rows. Preserve the observable outcomes instead of mirroring internal implementation details.
+The plan has 139 scenario rows, not a requirement for 139 separate test files. Parameterized tests and shared fixtures can cover related rows. Preserve observable outcomes instead of mirroring internal implementation details.
 
 ## 2. Scenario owners
 
@@ -27,17 +27,23 @@ The current backlog has 139 scenario rows, not a requirement for 139 separate te
 
 ## 3. Test environments
 
-Use Jest/Supertest for backend rules and HTTP tests, with a real isolated PostgreSQL database for FKs, transactions, locking, and refresh concurrency. Pure field/status validators may be tested without database setup. Use Playwright for the required browser journey and Alice/Bob access demonstration.
+Jest/Supertest exercise the running API and real isolated PostgreSQL for FKs, transactions, locking, and refresh concurrency. Playwright exercises the required browser journey and Alice/Bob access demonstration.
 
-Provide Docker test build targets and `make test` so host Node/Yarn/PostgreSQL is unnecessary. Test fixtures are independent of developer data. The private-Delivery example is not a mutation to the default demo seed. Use explicit test signing material, bounded timers, and deterministic data; never production secrets.
+Run `make test` from the repository root. It builds and runs the isolated test stack; host Node/Yarn/PostgreSQL is unnecessary. `yarn test:typecheck` checks the TypeScript suites without starting services. The database uses a separate `flowboard_test` name and temporary storage. Fixtures reset between cases, and the runner refuses any database URL without `flowboard_test`. Test signing material is explicit and development-only.
 
-## 4. Required browser proof and defect handling
+## 4. Outstanding coverage
+
+The following scenario rows do not yet have executable tests: AUTH-04, AUTH-14, HIER-11, WEB-18, WEB-19, and WEB-20. AUTH-04 requires an SSO verifier, and AUTH-14 requires credential-maintenance behavior that is not implemented. The browser parent-picker journey for HIER-11/WEB-18/WEB-20 timed out across three attempts; the uncertain assumption is that the test reliably selects newly created parents in the Ant Design picker. WEB-19 is presentation guidance and color consistency; it needs a visual review rather than a superficial visibility assertion.
+
+RUN-01 and RUN-09 are delivery checks. `make test` passed on 2026-10-22 with the converted TSX suites: 66 API tests and 15 browser tests. A clean startup of the regular development Compose stack remains to be recorded for RUN-01. Several implemented test titles cover only part of a multi-clause scenario; expand them before claiming all 139 rows are complete.
+
+## 5. Required browser proof and defect handling
 
 The minimum path is login -> select list -> expected resolved columns -> open task -> change custom answer -> save and verify persisted value. Add Alice logout/Bob login and assert the private branch disappears with no cached Alice data.
 
 For a failure, report location, input, expected/actual outcome, and the owner/ADR. Fix the underlying rule rather than weakening the assertion. If three fixes fail, stop and name the doubtful assumption before another attempt. Record material AI-generated test corrections in AI_USAGE.md when application work begins.
 
-## 5. Final evidence
+## 6. Final evidence
 
 | Check                   | Evidence required                                                                    |
 | ----------------------- | ------------------------------------------------------------------------------------ |

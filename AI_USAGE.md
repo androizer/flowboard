@@ -1,5 +1,14 @@
 # AI usage record
 
+## 2026-10-22 — Application test implementation
+
+- Added isolated PostgreSQL-backed API tests and Playwright browser journeys for the documented domain scenarios. The test runner guards against a non-test database URL, resets fixtures between cases, and runs through a separate Docker Compose project.
+- Corrected the browser harness after refresh coordination depended on a trustworthy `localhost` origin for Web Locks. A local proxy now serves the Compose web service to the test browser without changing application behavior.
+- Rejected a brittle member hierarchy creation browser test after three unsuccessful parent-picker selection attempts. The test plan records the unproved HIER-11/WEB-18/WEB-20 journey instead of treating a timed-out selector as passing coverage.
+- Corrected a board/table parity test that sampled board cards before the asynchronous board read completed. It now waits for the seeded cards before comparing the identities and resolved columns.
+- Kept planned SSO verification and credential-maintenance scenarios outstanding because no corresponding application behavior exists to test.
+- Converted the initially generated CommonJS test cases to TSX modules after reviewer feedback. Replaced `require` and `module.exports` with TypeScript imports/exports, moved the shared fixture to TypeScript, and added a test typecheck command and TypeScript-aware runner configuration.
+
 ## 2026-10-20 — Day 1 implementation
 
 - Created the initial monorepo, Docker topology, Prisma schema/migration, demo seed, web shell, and NestJS authentication/hierarchy foundation from the accepted module specifications.

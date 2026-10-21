@@ -16,18 +16,28 @@
     "prisma:generate": "yarn workspace @flowboard/api prisma:generate",
     "prisma:migrate": "yarn workspace @flowboard/api prisma:migrate",
     "seed": "yarn workspace @flowboard/api seed",
-    "typecheck": "yarn workspace @flowboard/api typecheck && yarn workspace @flowboard/web typecheck"
+    "test:api": "jest --runInBand",
+    "test:typecheck": "tsc --project tests/tsconfig.json --noEmit",
+    "test:web": "playwright test",
+    "test": "yarn test:api && yarn test:web",
+    "typecheck": "yarn workspace @flowboard/api typecheck && yarn workspace @flowboard/web typecheck && yarn test:typecheck"
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",
     "@nx/eslint": "20.8.4",
     "@nx/eslint-plugin": "20.8.4",
+    "@playwright/test": "^1.64.1",
+    "@types/jest": "29.5.14",
+    "@types/supertest": "^7.2.1",
     "concurrently": "^9.1.2",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "globals": "^15.14.0",
+    "jest": "29.7.0",
     "nx": "20.8.4",
     "prettier": "^3.5.0",
+    "supertest": "^7.3.1",
+    "ts-jest": "29.2.5",
     "typescript-eslint": "^8.20.0"
   }
 }

@@ -1,6 +1,6 @@
 # Module: web client
 
-Status: Day 1–2 login/task views and Day 3 admin configuration, grants, hierarchy, and move correction UI added; manual admin runtime review completed, other web TODOs and executable application tests pending. Code owner: `apps/web/src`. Navigation: [hub](../README.md), [API/contracts](api-contracts.md), [identity](identity.md), [ADR-0001](../adr/0001-modular-monolith.md).
+Status: login/task views and admin configuration, grants, hierarchy, and move correction UI added; manual runtime review completed and executable browser test coverage is partial. Code owner: `apps/web/src`. Navigation: [hub](../README.md), [API/contracts](api-contracts.md), [identity](identity.md), [ADR-0001](../adr/0001-modular-monolith.md), [test coverage](../test-plan.md).
 
 ## 1. Purpose and example
 

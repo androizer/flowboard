@@ -1,6 +1,6 @@
 # Module: identity and authentication
 
-Status: Day 1 local-auth/session foundation implemented; future SSO and Day 4 executable tests remain planned. Code owner: `apps/api/src/identity`. Navigation: [hub](../README.md), [ADR-0004](../adr/0004-authentication.md), [complete ER](../er-diagram.md).
+Status: local-auth/session foundation implemented; future SSO remains planned, and executable test coverage is partial. Code owner: `apps/api/src/identity`. Navigation: [hub](../README.md), [ADR-0004](../adr/0004-authentication.md), [complete ER](../er-diagram.md), [test coverage](../test-plan.md).
 
 ## 1. Purpose and example
 

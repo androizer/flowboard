@@ -1,6 +1,6 @@
 # Module: permissions
 
-Status: Day 2 tree/list/task access and Day 3 grant administration routes/UI added; manual runtime review completed, executable application tests pending. Code owner: `apps/api/src/permissions`. Navigation: [hub](../README.md), [ADR-0002](../adr/0002-hierarchy-and-access.md), [hierarchy](hierarchy.md).
+Status: tree/list/task access and grant administration routes/UI added; manual runtime review completed and executable test coverage is partial. Code owner: `apps/api/src/permissions`. Navigation: [hub](../README.md), [ADR-0002](../adr/0002-hierarchy-and-access.md), [hierarchy](hierarchy.md), [test coverage](../test-plan.md).
 
 ## 1. Purpose and example
 

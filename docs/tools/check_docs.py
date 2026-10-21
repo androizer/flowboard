@@ -55,7 +55,7 @@ def read_schema():
         text = path.read_text()
         for section in SECTIONS:
             require(section in text, f"{path.name}: missing section {section}")
-        require(re.search(r"^Status: (planned\.|Day .+ (?:implemented|added)[;\.])", text, re.M), f"{path.name}: implementation status must be explicit")
+        require(re.search(r"^Status: (?:planned\.|[^\n]+ (?:implemented|added)[;\.])", text, re.M), f"{path.name}: implementation status must be explicit")
         require("```mermaid\nflowchart" in text, f"{path.name}: missing workflow diagram")
         require("```mermaid\nsequenceDiagram" in text, f"{path.name}: missing sequence diagram")
         case_ids.extend(re.findall(r"^\| ([A-Z]+-\d{2}) \|", text, re.M))
@@ -228,9 +228,9 @@ def main():
     require(target.exists() and target.read_text() == expected, "Derived ER is stale; run python3 docs/tools/check_docs.py --write")
     nodes = check_dependencies()
     files, diagrams, links = check_markdown()
-    print(f"Documentation OK: {len(MODULES)} modules, {len(definitions)} owned business tables, {len(case_ids)} application-test TODOs.")
+    print(f"Documentation OK: {len(MODULES)} modules, {len(definitions)} owned business tables, {len(case_ids)} application-test scenarios.")
     print(f"Checked {files} Markdown files, {diagrams} Mermaid blocks, {links} local links, and an acyclic {nodes}-project dependency policy.")
-    print("Protected authentication reference fields and credential ownership match. Application tests were not implemented or run.")
+    print("Protected authentication reference fields and credential ownership match. Application test execution is separate from this check.")
 
 
 if __name__ == "__main__":

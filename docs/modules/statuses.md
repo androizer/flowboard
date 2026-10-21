@@ -1,6 +1,6 @@
 # Module: statuses
 
-Status: Day 2 resolution/task validation and Day 3 candidate set writes/reset/admin editor added; manual runtime review completed, executable application tests pending. Code owner: `apps/api/src/statuses`. Navigation: [hub](../README.md), [ADR-0003](../adr/0003-scoped-configuration.md), [workflows](workflows.md).
+Status: resolution/task validation and candidate set writes/reset/admin editor added; manual runtime review completed and executable test coverage is partial. Code owner: `apps/api/src/statuses`. Navigation: [hub](../README.md), [ADR-0003](../adr/0003-scoped-configuration.md), [workflows](workflows.md), [test coverage](../test-plan.md).
 
 ## 1. Purpose and example
 

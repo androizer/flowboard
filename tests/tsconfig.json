@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "strict": false,
+    "skipLibCheck": true,
+    "types": ["node", "jest"]
+  },
+  "include": ["api/**/*.ts", "api/**/*.tsx", "web/**/*.tsx", "../playwright.config.ts"]
+}

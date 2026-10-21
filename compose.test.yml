@@ -1,0 +1,60 @@
+name: flowboard-tests
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: flowboard_test
+      POSTGRES_USER: flowboard
+      POSTGRES_PASSWORD: flowboard_test
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U flowboard -d flowboard_test']
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    tmpfs:
+      - /var/lib/postgresql/data
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://flowboard:flowboard_test@db:5432/flowboard_test?schema=public
+      PORT: 3000
+      WEB_ORIGIN: http://localhost:8080
+      FLOWBOARD_DEMO_MODE: 'true'
+      JWT_ISSUER: flowboard-test
+      JWT_AUDIENCE: flowboard-test-client
+      JWT_SECRET: flowboard-test-only-signing-secret-32-bytes-minimum
+      SEED_PASSWORD: FlowboardDemo!2026
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    depends_on:
+      - api
+
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    environment:
+      DATABASE_URL: postgresql://flowboard:flowboard_test@db:5432/flowboard_test?schema=public
+      API_URL: http://api:3000
+      WEB_URL: http://localhost:8080
+      WEB_ORIGIN: http://localhost:8080
+      FLOWBOARD_DEMO_MODE: 'true'
+      SEED_PASSWORD: FlowboardDemo!2026
+      JWT_ISSUER: flowboard-test
+      JWT_AUDIENCE: flowboard-test-client
+      JWT_SECRET: flowboard-test-only-signing-secret-32-bytes-minimum
+      CI: 'true'
+    depends_on:
+      - api
+      - web
+    command: ['sh', 'scripts/run-tests.sh']
