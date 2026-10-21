@@ -1,15 +1,4 @@
-import {
-  Alert,
-  Button,
-  Checkbox,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Select,
-  Space,
-  Typography,
-} from 'antd';
+import { Button, Checkbox, Form, Input, InputNumber, Modal, Select, Space, Typography } from 'antd';
 import { useEffect, useState } from 'react';
 import type {
   Container,
@@ -42,12 +31,14 @@ export function TaskMove({
   const [clears, setClears] = useState<string[]>([]);
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
+  const [configReady, setConfigReady] = useState(false);
   useEffect(() => {
     if (!destinationId) return;
     let active = true;
     setError(undefined);
     setStatuses([]);
     setFields([]);
+    setConfigReady(false);
     void getResolvedConfig(accessToken, destinationId)
       .then((config) => {
         if (!active) return;
@@ -66,6 +57,7 @@ export function TaskMove({
           ),
         );
         setClears([]);
+        setConfigReady(true);
       })
       .catch(
         (cause) =>
@@ -76,11 +68,13 @@ export function TaskMove({
       active = false;
     };
   }, [accessToken, destinationId, task]);
-  const sourceOnly = sourceFields.filter(
-    (field) =>
-      task.customFields[field.key] !== undefined &&
-      !fields.some((target) => target.key === field.key),
-  );
+  const sourceOnly = configReady
+    ? sourceFields.filter(
+        (field) =>
+          task.customFields[field.key] !== undefined &&
+          !fields.some((target) => target.key === field.key),
+      )
+    : [];
   async function submit() {
     if (!destinationId || !statusKey) return;
     setBusy(true);
@@ -112,12 +106,9 @@ export function TaskMove({
     >
       <Space direction="vertical" style={{ width: '100%' }}>
         {error && (
-          <Alert
-            type="error"
-            showIcon
-            message={error}
-            description="The task and your corrections were not changed."
-          />
+          <div className="move-inline-error" role="alert">
+            {error} Your choices are still here.
+          </div>
         )}
         <Typography.Text>Destination list</Typography.Text>
         <Select
@@ -128,7 +119,10 @@ export function TaskMove({
           options={lists
             .filter((list) => list.type === 'list' && list.id !== task.primaryListId)
             .map((list) => ({ value: list.id, label: list.name }))}
-          onChange={setDestinationId}
+          onChange={(id) => {
+            setDestinationId(id);
+            setConfigReady(false);
+          }}
           style={{ width: '100%' }}
         />
         {destinationId && statuses.length > 0 && (
@@ -185,12 +179,10 @@ export function TaskMove({
           </Form.Item>
         ))}
         {sourceOnly.length > 0 && (
-          <Alert
-            type="warning"
-            showIcon
-            message="Source-only answers need explicit clearing"
-            description={sourceOnly.map((field) => field.name).join(', ')}
-          />
+          <div className="move-inline-note" role="note">
+            {lists.find((list) => list.id === destinationId)?.name ?? 'This list'} does not use the
+            answers below. Check each one to remove it when you move this task.
+          </div>
         )}
         {sourceOnly.map((field) => (
           <Checkbox

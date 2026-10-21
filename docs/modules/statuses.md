@@ -52,6 +52,8 @@ One default set per workspace and at most one local set per space/folder/list. A
 
 `STATUSES.id` identifies a definition for administration. `key` identifies the semantic task status in an effective set. Two sets can both contain key `todo` with different labels. Task-to-status validity is therefore a resolver rule rather than a simple FK to one definition.
 
+The admin editor labels the stored key, display name, stage/category, color, and board order separately. Its status-flow preview renders the current draft in display order. Arrows describe column sequence only: the MVP has no transition graph or per-edge restrictions, so a task may move to any valid status in its list. A transition editor would be a separate domain change, not a visual interpretation of row order.
+
 ## 3. Connections and interfaces
 
 | Consumer          | Public capability                                                                                                |
@@ -143,5 +145,6 @@ Build resolution/model in Day 2, apply to tasks/board immediately, and add space
 | STATUS-10 | Reference held only by archived task -> destructive change still blocked.                                |
 | STATUS-11 | Workspace default edit -> lower overrides shield lists; inheriting archived lists are checked.           |
 | STATUS-12 | Failed 409 save/reset -> original set/order and unsaved UI draft remain available.                       |
+| STATUS-13 | Editor explains key/name/stage; preview reflects unsaved order and does not claim transition rules.      |
 
 Changing replacement behavior, stable keys, or safety policy requires [ADR-0003](../adr/0003-scoped-configuration.md), move/config workflow updates, frontend inherited/local explanations, and the derived ER if schema changes.

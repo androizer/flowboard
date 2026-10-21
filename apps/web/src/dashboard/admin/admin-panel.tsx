@@ -1,6 +1,6 @@
 import { Select, Space, Tabs, Typography } from 'antd';
 import { useState } from 'react';
-import type { Container } from '@flowboard/contracts';
+import type { Container, WorkspaceMember } from '@flowboard/contracts';
 import { StatusEditor } from './status-editor';
 import { FieldsEditor } from './fields-editor';
 import { GrantsEditor } from './grants-editor';
@@ -19,7 +19,7 @@ export function AdminPanel({
   accessToken: string;
   workspaceId: string;
   containers: Node[];
-  members: Array<{ id: string; name: string }>;
+  members: WorkspaceMember[];
   onHierarchyChange: () => Promise<void>;
   onConfigChange: () => void;
 }) {

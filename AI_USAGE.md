@@ -60,3 +60,20 @@
 ## 2026-10-21 — Account header correction
 
 - User browser feedback identified that the role-only header and exposed Sign out button did not identify the signed-in person. Replaced them with an initial avatar and account menu backed by the safe `/v1/me` projection. The local email is shown only when the user's login identifier is email-form; otherwise the menu says it is unavailable.
+
+## 2026-10-21 — Admin usability corrections
+
+- Browser feedback showed that raw status keys/categories, hidden hierarchy creation paths, bare field ordering controls, grant choices containing an admin, move warnings, and uncolored priority chips were unclear. Clarified the domain language, exposed all valid hierarchy creation levels, used drag ordering and compact move guidance, and applied a fixed priority palette in the web UI.
+- A status-flow preview uses current draft order only. The existing model has no transition restrictions, so the preview explicitly says its arrows are sequence, not allowed-transition rules. Estimated about 2 hours for this scoped preview; a true transition editor would need a separate 1–2 day domain/ADR change.
+- Enforced member-only grant targets inside the existing admin workflow. The `/v1/users` projection now includes role so the picker can exclude admins; the backend rejects forged admin targets independently of UI filtering. Day 4 executable coverage remains a TODO.
+
+## 2026-10-21 — Hierarchy creation policy correction
+
+- User review pointed out that the assignment defines the container hierarchy but does not require admin-only creation. The earlier admin-only rule was our documented MVP choice, not an assignment constraint. Revised ADR-0002 and the module guides: active members can create spaces, and folders/lists under accessible parents; admin-only controls still cover edits, archive, reorder, configuration, and grants.
+- A private member-created container receives a creator allow grant in the same workspace transaction. This avoids creating a private node that immediately disappears from the creator's tree. Day 4 tests now include accessible/denied parents and atomic container-plus-grant behavior.
+
+## 2026-10-21 — Creator sharing and private-parent clarity
+
+- User browser feedback exposed a gap in the member creation policy: creators of private containers could not share them. Added an immutable creator reference to new containers and let the exact-container creator manage direct grants while their full ancestor path remains accessible. Admin grant authority remains unchanged. Existing rows are not assigned a creator from an allow grant alone; Bob's one local Private Space was repaired using its verified ID and matching self-allow.
+- Clarified that “public” on a child means open to people who can access its parent. A public folder cannot expose a private space. Creator allow writes reject recipients blocked by a private/denied parent, and the UI explains that sharing a parent opens descendants unless denied. Updated ADR-0002 because the assignment did not define creator sharing or the ancestor/public intersection.
+- Browser review found that the first API projection omitted `createdByUserId` from `/v1/tree`, leaving the new sharing control hidden despite stored creator data. Added it to the filtered tree projection, rebuilt, and confirmed both the Create-page and list-board Manage access controls. The disposable API and browser checks covered creator grant, blocked parent, self-grant protection, unrelated member denial, and admin access. Day 4 executable coverage remains TODO.

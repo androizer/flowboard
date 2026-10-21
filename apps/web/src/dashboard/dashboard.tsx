@@ -13,7 +13,9 @@ import {
   Button,
   Dropdown,
   Empty,
+  Modal,
   Segmented,
+  Select,
   Skeleton,
   Table,
   Tag,
@@ -29,6 +31,7 @@ import type {
   FieldDefinition,
   TaskProjection,
   WorkspaceOverview,
+  WorkspaceMember,
 } from '@flowboard/contracts';
 import {
   Actor,
@@ -45,8 +48,17 @@ import { TaskEditor } from './tasks/task-editor';
 import { AdminPanel } from './admin/admin-panel';
 import { TaskMove } from './tasks/task-move';
 import { WorkspaceHome } from './home/workspace-home';
+import { ContainerCreator } from './admin/hierarchy-editor';
+import { GrantsEditor } from './admin/grants-editor';
 
 type EditorState = { task: TaskProjection | null; presentation: 'modal' | 'drawer' };
+const priorityColors: Record<TaskProjection['priority'], string> = {
+  urgent: 'red',
+  high: 'orange',
+  normal: 'blue',
+  low: 'green',
+  none: 'default',
+};
 
 function treeNodes(containers: Container[], parentId: string | null = null): DataNode[] {
   return containers
@@ -95,15 +107,21 @@ export function Dashboard({
   const [homeRevision, setHomeRevision] = useState(0);
   const [pendingHomeTask, setPendingHomeTask] = useState<{ id: string; listId: string }>();
   const [board, setBoard] = useState<BoardResponse>();
-  const [members, setMembers] = useState<Array<{ id: string; name: string }>>([]);
+  const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [view, setView] = useState<'Board' | 'Table'>('Board');
   const [editor, setEditor] = useState<EditorState>();
   const [movingTask, setMovingTask] = useState<TaskProjection>();
   const [adminOpen, setAdminOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [shareId, setShareId] = useState<string>();
+  const [shareSelection, setShareSelection] = useState<string>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
   const [workspaceError, setWorkspaceError] = useState<string>();
   const [messageApi, messageContext] = message.useMessage();
+  const ownedContainers = (containers ?? []).filter(
+    (node) => node.createdByUserId === actor.userId,
+  );
 
   useEffect(() => {
     let active = true;
@@ -189,6 +207,7 @@ export function Dashboard({
 
   function openHome() {
     setAdminOpen(false);
+    setCreateOpen(false);
     setPendingHomeTask(undefined);
     setSelectedListId(undefined);
     setHomeRevision((value) => value + 1);
@@ -196,6 +215,7 @@ export function Dashboard({
 
   function openListFromHome(listId: string) {
     setAdminOpen(false);
+    setCreateOpen(false);
     setPendingHomeTask(undefined);
     setView('Board');
     setSelectedListId(listId);
@@ -203,6 +223,7 @@ export function Dashboard({
 
   function openTaskFromHome(id: string, listId: string) {
     setAdminOpen(false);
+    setCreateOpen(false);
     setPendingHomeTask({ id, listId });
     setView('Board');
     setSelectedListId(listId);
@@ -282,7 +303,9 @@ export function Dashboard({
           sorter: (a: TaskProjection, b: TaskProjection) =>
             ['urgent', 'high', 'normal', 'low', 'none'].indexOf(a.priority) -
             ['urgent', 'high', 'normal', 'low', 'none'].indexOf(b.priority),
-          render: (value: string) => <Tag>{value}</Tag>,
+          render: (value: TaskProjection['priority']) => (
+            <Tag color={priorityColors[value]}>{value}</Tag>
+          ),
         },
         {
           title: 'Due date',
@@ -356,10 +379,22 @@ export function Dashboard({
           <div className="workspace-sidebar-title">Flowboard</div>
           <button
             type="button"
-            className={`workspace-home-link${selectedListId ? '' : ' active'}`}
+            className={`workspace-home-link${!selectedListId && !adminOpen && !createOpen ? ' active' : ''}`}
             onClick={openHome}
           >
             <HomeOutlined /> Home
+          </button>
+          <button
+            type="button"
+            className={`workspace-home-link${createOpen ? ' active' : ''}`}
+            onClick={() => {
+              setAdminOpen(false);
+              setCreateOpen(true);
+              setSelectedListId(undefined);
+              setEditor(undefined);
+            }}
+          >
+            <PlusOutlined /> Create
           </button>
           {actor.role === 'admin' && (
             <button
@@ -367,6 +402,7 @@ export function Dashboard({
               className={`workspace-home-link${adminOpen ? ' active' : ''}`}
               onClick={() => {
                 setAdminOpen(true);
+                setCreateOpen(false);
                 setSelectedListId(undefined);
                 setEditor(undefined);
               }}
@@ -385,6 +421,7 @@ export function Dashboard({
               onSelect={(keys) => {
                 if (keys[0]) {
                   setAdminOpen(false);
+                  setCreateOpen(false);
                   setPendingHomeTask(undefined);
                   setSelectedListId(String(keys[0]));
                 }
@@ -408,14 +445,47 @@ export function Dashboard({
               onConfigChange={() => setHomeRevision((value) => value + 1)}
             />
           )}
-          {!adminOpen && !selectedListId && home && (
+          {createOpen && containers && (
+            <div className="workspace-create-page">
+              <Typography.Title level={2}>Create work area</Typography.Title>
+              <ContainerCreator
+                accessToken={accessToken}
+                selected={undefined}
+                containers={containers}
+                onChanged={async (createdId) => {
+                  await reloadTree();
+                  if (createdId) setShareSelection(createdId);
+                }}
+              />
+              {ownedContainers.length > 0 && (
+                <div className="workspace-sharing-entry">
+                  <Typography.Title level={5}>Share a work area you created</Typography.Title>
+                  <Select
+                    aria-label="Work area to share"
+                    value={shareSelection}
+                    placeholder="Choose a space, folder, or list"
+                    options={ownedContainers.map((node) => ({
+                      value: node.id,
+                      label: `${node.type}: ${node.name}`,
+                    }))}
+                    onChange={setShareSelection}
+                    style={{ minWidth: 280 }}
+                  />{' '}
+                  <Button disabled={!shareSelection} onClick={() => setShareId(shareSelection)}>
+                    Manage access
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+          {!adminOpen && !createOpen && !selectedListId && home && (
             <WorkspaceHome
               overview={home}
               onOpenList={openListFromHome}
               onOpenTask={openTaskFromHome}
             />
           )}
-          {!adminOpen && selectedListId && board && (
+          {!adminOpen && !createOpen && selectedListId && board && (
             <>
               <Breadcrumb items={board.list.path.map((item) => ({ title: item.name }))} />
               <div className="list-heading">
@@ -431,15 +501,21 @@ export function Dashboard({
                         'ancestor')}
                   </span>
                 </div>
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={() =>
-                    setEditor({ task: null, presentation: view === 'Board' ? 'modal' : 'drawer' })
-                  }
-                >
-                  New task
-                </Button>
+                <div className="list-heading-actions">
+                  {containers?.find((node) => node.id === selectedListId)?.createdByUserId ===
+                    actor.userId && (
+                    <Button onClick={() => setShareId(selectedListId)}>Manage access</Button>
+                  )}
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() =>
+                      setEditor({ task: null, presentation: view === 'Board' ? 'modal' : 'drawer' })
+                    }
+                  >
+                    New task
+                  </Button>
+                </div>
               </div>
               <div className="view-toolbar">
                 <Segmented
@@ -497,7 +573,7 @@ export function Dashboard({
                             >
                               <strong>{task.title}</strong>
                               <div className="task-card-meta">
-                                <Tag>{task.priority}</Tag>
+                                <Tag color={priorityColors[task.priority]}>{task.priority}</Tag>
                                 <span>{dateLabel(task.dueDate)}</span>
                               </div>
                               <div className="task-card-assignees">
@@ -524,8 +600,10 @@ export function Dashboard({
               )}
             </>
           )}
-          {!adminOpen && !home && !board && loading && <Skeleton active paragraph={{ rows: 8 }} />}
-          {selectedListId && !board && !loading && !error && selected && (
+          {!adminOpen && !createOpen && !home && !board && loading && (
+            <Skeleton active paragraph={{ rows: 8 }} />
+          )}
+          {!createOpen && selectedListId && !board && !loading && !error && selected && (
             <Empty description="Select a list to begin." />
           )}
         </main>
@@ -568,6 +646,22 @@ export function Dashboard({
           }}
         />
       )}
+      <Modal
+        title={`Manage access: ${containers?.find((node) => node.id === shareId)?.name ?? ''}`}
+        open={Boolean(shareId)}
+        onCancel={() => setShareId(undefined)}
+        footer={null}
+        destroyOnHidden
+      >
+        {shareId && (
+          <GrantsEditor
+            accessToken={accessToken}
+            ownerId={shareId}
+            members={members}
+            currentUserId={actor.role === 'member' ? actor.userId : undefined}
+          />
+        )}
+      </Modal>
     </div>
   );
 }

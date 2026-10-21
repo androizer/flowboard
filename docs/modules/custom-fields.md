@@ -169,5 +169,6 @@ Build definition/resolver/validator in Day 2, connect task forms/value writes im
 | FIELD-11 | Unused select option removal succeeds; used option in archived task blocks and preserves option set.  |
 | FIELD-12 | Required field create/toggle with a missing archived answer -> 409 and no partial change.             |
 | FIELD-13 | Duplicate workspace key or forged option ID -> reject without changing existing definitions.          |
+| FIELD-14 | Drag local field order -> persisted order changes; inherited definitions keep their own owner/order.  |
 
 For changes, update this guide, [ADR-0003](../adr/0003-scoped-configuration.md), task/move workflows, form rendering/error paths, seed answers, and test TODOs. A new field type requires validation and input rendering, not merely a new enum value.

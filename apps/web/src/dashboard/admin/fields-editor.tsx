@@ -1,3 +1,4 @@
+import { HolderOutlined } from '@ant-design/icons';
 import { Alert, Button, Checkbox, Divider, Input, Select, Space, Tag, Typography } from 'antd';
 import { useEffect, useState } from 'react';
 import type { Container } from '@flowboard/contracts';
@@ -45,6 +46,8 @@ export function FieldsEditor({
   });
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
+  const [draggedId, setDraggedId] = useState<string>();
+  const [dropId, setDropId] = useState<string>();
   useEffect(() => {
     let active = true;
     setEditing(null);
@@ -134,9 +137,13 @@ export function FieldsEditor({
       setBusy(false);
     }
   }
-  async function move(index: number, delta: number) {
+  async function move(sourceId: string, targetId: string) {
     const ids = items.map((item) => item.id);
-    [ids[index], ids[index + delta]] = [ids[index + delta], ids[index]];
+    const from = ids.indexOf(sourceId);
+    const to = ids.indexOf(targetId);
+    if (from < 0 || to < 0 || from === to || busy) return;
+    ids.splice(from, 1);
+    ids.splice(to, 0, sourceId);
     setBusy(true);
     setError(undefined);
     try {
@@ -170,24 +177,70 @@ export function FieldsEditor({
           description="Your draft is preserved. Correct the blocker and save again."
         />
       )}
-      {items.map((field, index) => (
-        <Space key={field.id} wrap>
-          <Button type="link" onClick={() => select(field)}>
-            {field.name} <Tag>{field.key}</Tag>
-          </Button>
-          <Tag>{field.type}</Tag>
-          {field.required && <Tag color="red">required</Tag>}
-          <Button disabled={busy || index === 0} onClick={() => void move(index, -1)}>
-            ↑
-          </Button>
-          <Button disabled={busy || index === items.length - 1} onClick={() => void move(index, 1)}>
-            ↓
-          </Button>
-          <Button danger disabled={busy} onClick={() => void remove(field.id)}>
-            Delete
-          </Button>
-        </Space>
-      ))}
+      <Typography.Text type="secondary">
+        Drag a field by its handle to change its order. The new order saves when dropped.
+      </Typography.Text>
+      <div className="field-order-list" role="list" aria-label="Local fields in display order">
+        {items.map((field, index) => (
+          <div
+            className={`field-order-row${dropId === field.id ? ' drop-target' : ''}`}
+            key={field.id}
+            role="listitem"
+            onDragOver={(event) => {
+              if (!draggedId || busy) return;
+              event.preventDefault();
+              event.dataTransfer.dropEffect = 'move';
+              setDropId(field.id);
+            }}
+            onDragLeave={() => setDropId((old) => (old === field.id ? undefined : old))}
+            onDrop={(event) => {
+              event.preventDefault();
+              const sourceId = event.dataTransfer.getData('text/plain') || draggedId;
+              setDraggedId(undefined);
+              setDropId(undefined);
+              if (sourceId) void move(sourceId, field.id);
+            }}
+          >
+            <span
+              className="field-drag-handle"
+              draggable={!busy}
+              role="button"
+              tabIndex={0}
+              aria-label={`Drag ${field.name} to reorder; use arrow keys for keyboard`}
+              onDragStart={(event) => {
+                setDraggedId(field.id);
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', field.id);
+              }}
+              onDragEnd={() => {
+                setDraggedId(undefined);
+                setDropId(undefined);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'ArrowUp' && index > 0) {
+                  event.preventDefault();
+                  void move(field.id, items[index - 1].id);
+                }
+                if (event.key === 'ArrowDown' && index < items.length - 1) {
+                  event.preventDefault();
+                  void move(field.id, items[index + 1].id);
+                }
+              }}
+            >
+              <HolderOutlined />
+            </span>
+            <Button type="link" className="field-order-name" onClick={() => select(field)}>
+              {field.name}
+            </Button>
+            <Tag>{field.key}</Tag>
+            <Tag>{field.type.replaceAll('_', ' ')}</Tag>
+            {field.required && <Tag color="red">Required</Tag>}
+            <Button danger disabled={busy} onClick={() => void remove(field.id)}>
+              Delete
+            </Button>
+          </div>
+        ))}
+      </div>
       <Button onClick={() => select()}>Add field</Button>
       {editing && (
         <>

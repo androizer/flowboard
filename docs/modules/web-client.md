@@ -10,15 +10,15 @@ React uses Ant Design for forms, table, tree, modal, and drawer. Day 2 uses nati
 
 ## 2. Ownership, data, and decisions
 
-| UI area             | Planned components and behavior                                                                                                                                                                                                                                 |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Login/session       | Implemented: AntD sign-in form, in-memory access token, refresh-on-load, and Axios 401 interceptor. It serializes refresh within/across tabs, retries each protected request once, and clears the local session if refresh fails. Sign out all remains planned. |
-| Shell/navigation    | Implemented: two-pane layout, Home entry, Tree, Breadcrumb, server-filtered collapsible hierarchy; Work overview is the default after login. The header shows a current-user initial avatar that opens name, role, email, and Sign Out.                         |
-| Work overview       | Implemented: live visible-task/list/due-soon totals, per-list counts, and upcoming due dates; list and task links enter the existing Board view. Empty states handle no accessible lists or upcoming tasks.                                                     |
-| Kanban              | Implemented: resolved columns including empty ones; cards with title, assignees, priority, due date; desktop drag placement. Selecting a card opens a wide modal.                                                                                               |
-| Task table          | Implemented: built-ins and resolved custom-field columns, due-date/priority sorting; selecting a row opens a right-side drawer.                                                                                                                                 |
-| Task detail/move    | Built-ins and inputs generated from resolved schema, task create/edit, saved version; Day 3 destination selector loads resolved config and requires source-only clears.                                                                                         |
-| Admin configuration | Day 3 admin panel offers hierarchy, complete local status sets/reset, local field/options/order, and allow/deny grants. Status inheritance is labeled; failed saves preserve drafts. Runtime verification remains pending.                                      |
+| UI area          | Planned components and behavior                                                                                                                                                                                                                                                                                                                    |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Login/session    | Implemented: AntD sign-in form, in-memory access token, refresh-on-load, and Axios 401 interceptor. It serializes refresh within/across tabs, retries each protected request once, and clears the local session if refresh fails. Sign out all remains planned.                                                                                    |
+| Shell/navigation | Implemented: two-pane layout, Home/Create entries, admin-only Admin entry, Tree, Breadcrumb, server-filtered collapsible hierarchy; Work overview is the default after login. The header shows a current-user initial avatar that opens name, role, email, and Sign Out.                                                                           |
+| Work overview    | Implemented: live visible-task/list/due-soon totals, per-list counts, and upcoming due dates; list and task links enter the existing Board view. Empty states handle no accessible lists or upcoming tasks.                                                                                                                                        |
+| Kanban           | Implemented: resolved columns including empty ones; cards with title, assignees, colored priority, due date; desktop drag placement. Selecting a card opens a wide modal.                                                                                                                                                                          |
+| Task table       | Implemented: built-ins and resolved custom-field columns, due-date/priority sorting; selecting a row opens a right-side drawer.                                                                                                                                                                                                                    |
+| Task detail/move | Built-ins and inputs generated from resolved schema, task create/edit, saved version; Day 3 destination selector loads resolved config and requires source-only clears.                                                                                                                                                                            |
+| Hierarchy/config | A shared creation form lets members create spaces/folders/lists under accessible parents and also appears in Admin hierarchy. Creators can share their own containers from Create or a list board. Admin tabs handle all grants plus hierarchy edits, local status sets/reset with preview, and drag-ordered fields. Failed saves preserve drafts. |
 
 The client owns no business ER table. All stored task/config/membership data comes from the API. Access tokens remain in memory; refresh tokens are HttpOnly cookies managed by the browser. No token localStorage persistence or direct provider SDK use is allowed here for the MVP.
 
@@ -67,6 +67,7 @@ sequenceDiagram
     participant Move as TaskMove
     participant Admin as AdminPanel
     participant AdminTab as Status, Fields, Grants, or Hierarchy editor
+    participant Create as ContainerCreator
     participant API as Flowboard API
 
     Note over Main: Mounts React once and enables StrictMode checks during development.
@@ -121,6 +122,13 @@ sequenceDiagram
             API-->>Session: Confirmed move or validation error
             Session-->>Dash: Refresh source list after confirmed move
         end
+    else Create selected by a member or admin
+        Dash->>Create: Render container creation form with visible parent choices
+        Create->>Session: Submit space, folder, or list creation
+        Session->>API: POST /v1/containers
+        API-->>Session: Created container or access error
+        Session-->>Create: Confirmation or error
+        Create-->>Dash: Refresh permission-filtered tree
     else Admin selected by an admin actor
         Dash->>Admin: Render administration surface
         Note over Admin: Selects configuration owner and routes to the matching admin editor.
@@ -224,6 +232,8 @@ sequenceDiagram
 
 Selecting Home returns to a fresh overview. Selecting a workspace/space/folder navigates or configures that container; boards belong to selected lists. An upcoming task opens its list's Board and then its task modal. Empty accessible containers remain visible. Card status/position changes do not move lists. A failed drag shows the server result and an error rather than leaving a falsely saved card.
 
+The creation form describes child visibility as “Anyone with parent access.” A public child under a private parent remains limited by that parent. The member's Create page lists containers they created for sharing; a created list also shows Manage access on its board. The member picker omits the current member and admins. The server independently verifies creator identity and recipient parent access.
+
 ## 5. Build phases, failure cases, and change guide
 
 Day 2 implements the initial shell, Work overview, board/table, task modal/drawer, and confirmed task edits. Day 3 completes config/move/grant UI and feedback; Day 4 implements executable browser tests. Desktop-first clarity is the target; responsive polish is optional.
@@ -245,5 +255,12 @@ Day 2 implements the initial shell, Work overview, board/table, task modal/drawe
 | WEB-13 | Move to list with different status/required fields/source-only values -> correction controls match destination; failed move preserves task.                   |
 | WEB-14 | Member loads same app -> no admin entry; direct admin API request remains 403.                                                                                |
 | WEB-15 | Signed-in header -> avatar initial and menu show that user's name, role, email, and Sign Out; switching users changes the identity shown.                     |
+| WEB-16 | Status editor labels stored key/name/stage/color; draft preview shows board order without implying transition restrictions.                                   |
+| WEB-17 | Field drag reorder persists and uses separated rows; keyboard handle can move a row without up/down buttons.                                                  |
+| WEB-18 | Hierarchy creation choices remain visible to admin and member; parent selector offers only valid, visible container types.                                    |
+| WEB-19 | Move guidance is compact and plain language; priority tags use consistent colors on board and table.                                                          |
+| WEB-20 | Member sees Create without Admin, creates a space/folder/list from visible parents, and still cannot open admin settings.                                     |
+| WEB-21 | Creator opens Manage access from Create or owned list, shares with a member, and recipient sees the list; another member sees no controls.                    |
+| WEB-22 | Create a public folder under private space -> helper says parent access is required; unallowed member cannot discover its branch.                             |
 
 When changing a screen, identify whether it is presentation-only or changes a domain contract. Update the owning business module first for rule changes, then contracts/API client/forms/cache invalidation and browser TODOs. Do not copy permission or inheritance rules into components.
