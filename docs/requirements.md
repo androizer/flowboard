@@ -2,7 +2,7 @@
 
 Navigation: [hub](README.md), [roadmap](implementation-plan.md), [test plan](test-plan.md).
 
-The supplied 11-page [assignment PDF](flowboard-module.pdf) defines required behavior. Source page numbers below refer to that document, not new requirements invented by implementation. Local password/JWT/refresh authentication is an explicitly chosen addition replacing the assignment's permitted mock identity. Module guides mark implemented Day 1–2 behavior and planned Day 3–4 behavior separately.
+The supplied 11-page [assignment PDF](flowboard-module.md) defines required behavior. Source page numbers below refer to that document, not new requirements invented by implementation. Local password/JWT/refresh authentication is an explicitly chosen addition replacing the assignment's permitted mock identity. Module guides mark implemented Day 1–2 behavior and planned Day 3–4 behavior separately.
 
 ## 1. Required product surface
 

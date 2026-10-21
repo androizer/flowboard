@@ -4,7 +4,7 @@ Status: Day 1 foundation and Day 2 Work overview/task/permission views are imple
 
 Start here. These documents explain what Flowboard does, why it is structured this way, and how to build one part without accidentally breaking another.
 
-The [assignment PDF](flowboard-module.pdf) is the source for required product and delivery outcomes. Module guides record Flowboard's chosen rules and implementation details where the assignment leaves a choice. If a guide conflicts with a requirement in the PDF, resolve the conflict explicitly before changing code.
+The [assignment PDF](flowboard-module.md) is the source for required product and delivery outcomes. Module guides record Flowboard's chosen rules and implementation details where the assignment leaves a choice. If a guide conflicts with a requirement in the PDF, resolve the conflict explicitly before changing code.
 
 ## 1. Find the right guide
 

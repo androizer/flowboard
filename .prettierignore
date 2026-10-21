@@ -4,4 +4,4 @@ dist
 dist-prisma
 node_modules
 apps/api/prisma/migrations
-docs/flowboard-module.pdf
+docs/flowboard-module.md
