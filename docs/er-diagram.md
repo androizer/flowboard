@@ -261,34 +261,34 @@ erDiagram
 
 ## Table owners
 
-| Table | Single owning guide |
-| --- | --- |
-| USERS | [identity](modules/identity.md) |
-| AUTH_IDENTITIES | [identity](modules/identity.md) |
-| USER_CREDENTIALS | [identity](modules/identity.md) |
-| WORKSPACE_MEMBERSHIPS | [identity](modules/identity.md) |
-| AUTH_SESSIONS | [identity](modules/identity.md) |
-| REFRESH_TOKENS | [identity](modules/identity.md) |
-| WORKSPACES | [hierarchy](modules/hierarchy.md) |
-| CONTAINERS | [hierarchy](modules/hierarchy.md) |
-| CONTAINER_GRANTS | [permissions](modules/permissions.md) |
-| STATUS_SETS | [statuses](modules/statuses.md) |
-| STATUSES | [statuses](modules/statuses.md) |
+| Table                    | Single owning guide                       |
+| ------------------------ | ----------------------------------------- |
+| USERS                    | [identity](modules/identity.md)           |
+| AUTH_IDENTITIES          | [identity](modules/identity.md)           |
+| USER_CREDENTIALS         | [identity](modules/identity.md)           |
+| WORKSPACE_MEMBERSHIPS    | [identity](modules/identity.md)           |
+| AUTH_SESSIONS            | [identity](modules/identity.md)           |
+| REFRESH_TOKENS           | [identity](modules/identity.md)           |
+| WORKSPACES               | [hierarchy](modules/hierarchy.md)         |
+| CONTAINERS               | [hierarchy](modules/hierarchy.md)         |
+| CONTAINER_GRANTS         | [permissions](modules/permissions.md)     |
+| STATUS_SETS              | [statuses](modules/statuses.md)           |
+| STATUSES                 | [statuses](modules/statuses.md)           |
 | CUSTOM_FIELD_DEFINITIONS | [custom-fields](modules/custom-fields.md) |
-| CUSTOM_FIELD_OPTIONS | [custom-fields](modules/custom-fields.md) |
-| TASKS | [tasks](modules/tasks.md) |
-| TASK_ASSIGNEES | [tasks](modules/tasks.md) |
-| TASK_FIELD_VALUES | [tasks](modules/tasks.md) |
+| CUSTOM_FIELD_OPTIONS     | [custom-fields](modules/custom-fields.md) |
+| TASKS                    | [tasks](modules/tasks.md)                 |
+| TASK_ASSIGNEES           | [tasks](modules/tasks.md)                 |
+| TASK_FIELD_VALUES        | [tasks](modules/tasks.md)                 |
 
 ## Business rules that are not simple foreign keys
 
-| Rule | Owner |
-| --- | --- |
-| A task's container must be a list and its ancestry active. | [Hierarchy](modules/hierarchy.md) and [workflows](modules/workflows.md) |
-| Task status_key must belong to its list's resolved set; there is no direct global status FK. | [Statuses](modules/statuses.md) |
-| JSONB answers must match effective types, required rules, and option IDs. | [Custom fields](modules/custom-fields.md) |
-| A session's user and authenticating identity must match; credentials belong directly to the user. | [Identity](modules/identity.md) |
-| Session revoked_at is the refresh-family revocation source; token rows have no revoked_at. | [Identity](modules/identity.md) |
-| Moves and config edits validate every affected retained record before a single commit. | [Workflows](modules/workflows.md) |
+| Rule                                                                                              | Owner                                                                   |
+| ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| A task's container must be a list and its ancestry active.                                        | [Hierarchy](modules/hierarchy.md) and [workflows](modules/workflows.md) |
+| Task status_key must belong to its list's resolved set; there is no direct global status FK.      | [Statuses](modules/statuses.md)                                         |
+| JSONB answers must match effective types, required rules, and option IDs.                         | [Custom fields](modules/custom-fields.md)                               |
+| A session's user and authenticating identity must match; credentials belong directly to the user. | [Identity](modules/identity.md)                                         |
+| Session revoked_at is the refresh-family revocation source; token rows have no revoked_at.        | [Identity](modules/identity.md)                                         |
+| Moves and config edits validate every affected retained record before a single commit.            | [Workflows](modules/workflows.md)                                       |
 
 Migration history and seed-version bookkeeping are infrastructure metadata, not extra business tables.

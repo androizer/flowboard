@@ -2,14 +2,32 @@
   "name": "flowboard",
   "private": true,
   "packageManager": "yarn@1.22.22",
-  "workspaces": ["apps/*", "libs/*"],
+  "workspaces": [
+    "apps/*",
+    "libs/*"
+  ],
   "scripts": {
     "build": "yarn workspace @flowboard/api build && yarn workspace @flowboard/web build",
     "dev": "concurrently \"yarn workspace @flowboard/api start:dev\" \"yarn workspace @flowboard/web dev\"",
-    "lint": "yarn workspace @flowboard/api lint && yarn workspace @flowboard/web lint",
+    "format:check": "prettier --check .",
+    "format:write": "prettier --write .",
+    "lint": "nx run-many --target=lint",
+    "lint:fix": "nx run-many --target=lint -- --fix",
     "prisma:generate": "yarn workspace @flowboard/api prisma:generate",
     "prisma:migrate": "yarn workspace @flowboard/api prisma:migrate",
-    "seed": "yarn workspace @flowboard/api seed"
+    "seed": "yarn workspace @flowboard/api seed",
+    "typecheck": "yarn workspace @flowboard/api typecheck && yarn workspace @flowboard/web typecheck"
   },
-  "devDependencies": { "concurrently": "^9.1.2", "nx": "^20.4.6" }
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "@nx/eslint": "20.8.4",
+    "@nx/eslint-plugin": "20.8.4",
+    "concurrently": "^9.1.2",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^10.0.1",
+    "globals": "^15.14.0",
+    "nx": "20.8.4",
+    "prettier": "^3.5.0",
+    "typescript-eslint": "^8.20.0"
+  }
 }

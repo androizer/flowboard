@@ -6,9 +6,13 @@ import { PrismaService } from '../persistence/prisma.service';
 export class HierarchyController {
   constructor(private readonly prisma: PrismaService) {}
 
-  @UseGuards(AccessGuard) @Get('tree')
+  @UseGuards(AccessGuard)
+  @Get('tree')
   async tree(@CurrentActor() actor: { workspaceId: string }) {
-    const containers = await this.prisma.container.findMany({ where: { workspaceId: actor.workspaceId, archivedAt: null }, orderBy: [{ position: 'asc' }, { id: 'asc' }] });
+    const containers = await this.prisma.container.findMany({
+      where: { workspaceId: actor.workspaceId, archivedAt: null },
+      orderBy: [{ position: 'asc' }, { id: 'asc' }],
+    });
     return { workspaceId: actor.workspaceId, items: containers };
   }
 }

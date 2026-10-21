@@ -103,6 +103,14 @@ def read_schema():
 
 
 def render_er(definitions, owners, relationships):
+    def markdown_table(headers, rows):
+        widths = [max(len(cell) for cell in column) for column in zip(headers, *rows)]
+
+        def row(cells):
+            return "| " + " | ".join(cell.ljust(width) for cell, width in zip(cells, widths)) + " |"
+
+        return [row(headers), row(["-" * width for width in widths]), *(row(cells) for cells in rows)]
+
     groups = [
         ("1. Identity, credentials, sessions, and membership", ["USERS", "AUTH_IDENTITIES", "USER_CREDENTIALS", "AUTH_SESSIONS", "REFRESH_TOKENS", "WORKSPACES", "WORKSPACE_MEMBERSHIPS"]),
         ("2. Hierarchy, permissions, and configuration", ["WORKSPACES", "WORKSPACE_MEMBERSHIPS", "CONTAINERS", "CONTAINER_GRANTS", "STATUS_SETS", "STATUSES", "CUSTOM_FIELD_DEFINITIONS", "CUSTOM_FIELD_OPTIONS"]),
@@ -130,18 +138,21 @@ def render_er(definitions, owners, relationships):
         output.extend([f"## {heading}", "", "```mermaid", "erDiagram", *lines, ""])
         output.append("\n\n".join(definitions[name] for name in names))
         output.extend(["```", ""])
-    output.extend(["## Table owners", "", "| Table | Single owning guide |", "| --- | --- |"])
-    for table, owner in owners.items():
-        output.append(f"| {table} | [{owner.removesuffix('.md')}](modules/{owner}) |")
+    owner_rows = [
+        (table, f"[{owner.removesuffix('.md')}](modules/{owner})") for table, owner in owners.items()
+    ]
+    rule_rows = [
+        ("A task's container must be a list and its ancestry active.", "[Hierarchy](modules/hierarchy.md) and [workflows](modules/workflows.md)"),
+        ("Task status_key must belong to its list's resolved set; there is no direct global status FK.", "[Statuses](modules/statuses.md)"),
+        ("JSONB answers must match effective types, required rules, and option IDs.", "[Custom fields](modules/custom-fields.md)"),
+        ("A session's user and authenticating identity must match; credentials belong directly to the user.", "[Identity](modules/identity.md)"),
+        ("Session revoked_at is the refresh-family revocation source; token rows have no revoked_at.", "[Identity](modules/identity.md)"),
+        ("Moves and config edits validate every affected retained record before a single commit.", "[Workflows](modules/workflows.md)"),
+    ]
+    output.extend(["## Table owners", "", *markdown_table(("Table", "Single owning guide"), owner_rows)])
     output.extend([
         "", "## Business rules that are not simple foreign keys", "",
-        "| Rule | Owner |", "| --- | --- |",
-        "| A task's container must be a list and its ancestry active. | [Hierarchy](modules/hierarchy.md) and [workflows](modules/workflows.md) |",
-        "| Task status_key must belong to its list's resolved set; there is no direct global status FK. | [Statuses](modules/statuses.md) |",
-        "| JSONB answers must match effective types, required rules, and option IDs. | [Custom fields](modules/custom-fields.md) |",
-        "| A session's user and authenticating identity must match; credentials belong directly to the user. | [Identity](modules/identity.md) |",
-        "| Session revoked_at is the refresh-family revocation source; token rows have no revoked_at. | [Identity](modules/identity.md) |",
-        "| Moves and config edits validate every affected retained record before a single commit. | [Workflows](modules/workflows.md) |",
+        *markdown_table(("Rule", "Owner"), rule_rows),
         "", "Migration history and seed-version bookkeeping are infrastructure metadata, not extra business tables.", "",
     ])
     return "\n".join(output)

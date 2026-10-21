@@ -14,12 +14,12 @@ Target four focused days, approximately 32 hours. This is an estimate, not a gua
 
 ## 2. Build phases
 
-| Phase | Bounded work | Exit condition | Module references |
-| --- | --- | --- | --- |
-| Day 1, 8 hours | Review documentation/ADRs; Nx/Yarn/boundaries; Compose/migrations/seed; local and shared auth lifecycle; initial hierarchy. | Docker starts, identity tables match reference, login/refresh/revocation work, seeded tree exists. | [Runtime](modules/persistence-runtime.md), [identity](modules/identity.md), [hierarchy](modules/hierarchy.md) |
-| Day 2, 8 hours | Resolver models, backend permissions, tasks/answers/moves/order; initial AntD shell and task views. | APIs validate effective config/access and UI can create/edit/view tasks. | [Permissions](modules/permissions.md), [statuses](modules/statuses.md), [fields](modules/custom-fields.md), [tasks](modules/tasks.md), [workflows](modules/workflows.md), [web](modules/web-client.md) |
-| Day 3, 8 hours | Finish board/table/drawer/move; container/status/field/grant screens; sorts/feedback; Swagger/cookbook/docs; freeze features. | Required product behavior complete; inherited/local configuration and failures understandable. | [Web](modules/web-client.md), [API](modules/api-contracts.md), all domain guides |
-| Day 4, 8 hours | Implement recorded required cases, fix defects, clean Docker verification, final docs/AI log, 4-6 minute demo. | Required tests/checks pass; submission reproducible. | [Test plan](test-plan.md), [requirements](requirements.md), [runtime](modules/persistence-runtime.md) |
+| Phase          | Bounded work                                                                                                                  | Exit condition                                                                                     | Module references                                                                                                                                                                                      |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Day 1, 8 hours | Review documentation/ADRs; Nx/Yarn/boundaries; Compose/migrations/seed; local and shared auth lifecycle; initial hierarchy.   | Docker starts, identity tables match reference, login/refresh/revocation work, seeded tree exists. | [Runtime](modules/persistence-runtime.md), [identity](modules/identity.md), [hierarchy](modules/hierarchy.md)                                                                                          |
+| Day 2, 8 hours | Resolver models, backend permissions, tasks/answers/moves/order; initial AntD shell and task views.                           | APIs validate effective config/access and UI can create/edit/view tasks.                           | [Permissions](modules/permissions.md), [statuses](modules/statuses.md), [fields](modules/custom-fields.md), [tasks](modules/tasks.md), [workflows](modules/workflows.md), [web](modules/web-client.md) |
+| Day 3, 8 hours | Finish board/table/drawer/move; container/status/field/grant screens; sorts/feedback; Swagger/cookbook/docs; freeze features. | Required product behavior complete; inherited/local configuration and failures understandable.     | [Web](modules/web-client.md), [API](modules/api-contracts.md), all domain guides                                                                                                                       |
+| Day 4, 8 hours | Implement recorded required cases, fix defects, clean Docker verification, final docs/AI log, 4-6 minute demo.                | Required tests/checks pass; submission reproducible.                                               | [Test plan](test-plan.md), [requirements](requirements.md), [runtime](modules/persistence-runtime.md)                                                                                                  |
 
 During Days 1-3, record test cases as TODOs and run documentation/type/lint/boundary/build/manual checks. Do not generate executable application test cases or empty passing suites before feature freeze. App-test implementation occurs on Day 4.
 
@@ -39,13 +39,13 @@ docker compose up --build
 
 The supported path requires Docker only. UI is on 8080, API on 3000; database stays internal. Exact defaults/seed/signing/production safeguards are in [runtime](modules/persistence-runtime.md). Tests run through the future `make test` Docker target. All current runtime commands describe planned interfaces; there is no Compose/application source yet.
 
-| Deliverable | Completion evidence |
-| --- | --- |
-| Product | Hierarchy/tasks/inheritance/fields/permissions/board/table/detail/config forms and specified seed data operate. |
-| Authentication | User-owned credentials, matching session identities, shared token service, refresh/replay/logout work. |
-| Checks | Actual required tests, module boundaries, types, lint, build, and documentation checks pass. |
-| Documentation | README run/ports/accounts/API/architecture/data model/auth/channel/scale/IPC/trade-offs; AI_USAGE.md with useful corrections/rejections. Module specs match final code. |
-| Submission | Git source, Compose/.env.example/migrations, and 4-6 minute demo: startup, login, navigation, different sibling columns, custom answer edit, Alice/Bob difference. |
+| Deliverable    | Completion evidence                                                                                                                                                     |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Product        | Hierarchy/tasks/inheritance/fields/permissions/board/table/detail/config forms and specified seed data operate.                                                         |
+| Authentication | User-owned credentials, matching session identities, shared token service, refresh/replay/logout work.                                                                  |
+| Checks         | Actual required tests, module boundaries, types, lint, build, and documentation checks pass.                                                                            |
+| Documentation  | README run/ports/accounts/API/architecture/data model/auth/channel/scale/IPC/trade-offs; AI_USAGE.md with useful corrections/rejections. Module specs match final code. |
+| Submission     | Git source, Compose/.env.example/migrations, and 4-6 minute demo: startup, login, navigation, different sibling columns, custom answer edit, Alice/Bob difference.      |
 
 ## 5. Future changes
 

@@ -1,1 +1,7 @@
-{ "name": "api", "projectType": "application", "sourceRoot": "apps/api/src", "tags": ["scope:api"], "targets": { "build": { "command": "yarn workspace @flowboard/api build" }, "lint": { "command": "yarn workspace @flowboard/api lint" } } }
+{
+  "name": "api",
+  "projectType": "application",
+  "sourceRoot": "apps/api/src",
+  "tags": ["scope:api"],
+  "targets": { "build": { "command": "yarn workspace @flowboard/api build" } }
+}

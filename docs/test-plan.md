@@ -12,18 +12,18 @@ The current backlog has 99 scenario rows, not a requirement for 99 separate test
 
 ## 2. Scenario owners
 
-| Group | Owner and setup/action/outcome details | Priority |
-| --- | --- | --- |
-| AUTH-01 through AUTH-15 | [Identity](modules/identity.md) | Required: login/session/rotation/revocation/reference invariants |
-| HIER-01 through HIER-08 | [Hierarchy](modules/hierarchy.md) | Required: tree/type/scope/archive/order |
-| PERM-01 through PERM-10 | [Permissions](modules/permissions.md) | Required: role/grant/tree/direct URL consistency |
-| STATUS-01 through STATUS-10 | [Statuses](modules/statuses.md) | Required: inheritance/sibling columns/config safety |
-| FIELD-01 through FIELD-10 | [Custom fields](modules/custom-fields.md) | Required: six types/required/options/migration safety |
-| TASK-01 through TASK-10 | [Tasks](modules/tasks.md) | Required: task/assignment/value/version/order |
-| FLOW-01 through FLOW-09 | [Workflows](modules/workflows.md) | Required: atomic move/config/race behavior |
-| RUN-01 through RUN-09 | [Runtime](modules/persistence-runtime.md) | Required: real PostgreSQL/Docker/seed/constraints |
-| WEB-01 through WEB-10 | [Web](modules/web-client.md) | Required: browser journey and identity cleanup |
-| API-01 through API-08 | [API/contracts](modules/api-contracts.md) | Required: standardized API and channel agreement |
+| Group                       | Owner and setup/action/outcome details    | Priority                                                         |
+| --------------------------- | ----------------------------------------- | ---------------------------------------------------------------- |
+| AUTH-01 through AUTH-15     | [Identity](modules/identity.md)           | Required: login/session/rotation/revocation/reference invariants |
+| HIER-01 through HIER-08     | [Hierarchy](modules/hierarchy.md)         | Required: tree/type/scope/archive/order                          |
+| PERM-01 through PERM-10     | [Permissions](modules/permissions.md)     | Required: role/grant/tree/direct URL consistency                 |
+| STATUS-01 through STATUS-10 | [Statuses](modules/statuses.md)           | Required: inheritance/sibling columns/config safety              |
+| FIELD-01 through FIELD-10   | [Custom fields](modules/custom-fields.md) | Required: six types/required/options/migration safety            |
+| TASK-01 through TASK-10     | [Tasks](modules/tasks.md)                 | Required: task/assignment/value/version/order                    |
+| FLOW-01 through FLOW-09     | [Workflows](modules/workflows.md)         | Required: atomic move/config/race behavior                       |
+| RUN-01 through RUN-09       | [Runtime](modules/persistence-runtime.md) | Required: real PostgreSQL/Docker/seed/constraints                |
+| WEB-01 through WEB-10       | [Web](modules/web-client.md)              | Required: browser journey and identity cleanup                   |
+| API-01 through API-08       | [API/contracts](modules/api-contracts.md) | Required: standardized API and channel agreement                 |
 
 ## 3. Test environments
 
@@ -39,10 +39,10 @@ For a failure, report location, input, expected/actual outcome, and the owner/AD
 
 ## 5. Final evidence
 
-| Check | Evidence required |
-| --- | --- |
-| Domain/auth correctness | Passing actual required tests, including rollback and committed replay revocation. |
-| Schema | Real FK/index behavior and the accepted user-owned credential/session/token schema. |
-| Browser | Executed Playwright journey with persistence and permission difference. |
-| Delivery | Clean Docker run, seed restart preservation, and actual test command output. |
-| Documentation | Module/ADR/ER/contracts reflect final code and distinguish implemented/future scope. |
+| Check                   | Evidence required                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------------ |
+| Domain/auth correctness | Passing actual required tests, including rollback and committed replay revocation.   |
+| Schema                  | Real FK/index behavior and the accepted user-owned credential/session/token schema.  |
+| Browser                 | Executed Playwright journey with persistence and permission difference.              |
+| Delivery                | Clean Docker run, seed restart preservation, and actual test command output.         |
+| Documentation           | Module/ADR/ER/contracts reflect final code and distinguish implemented/future scope. |

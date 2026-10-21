@@ -15,6 +15,7 @@ The schema is borrowed from ancestors, but answers belong to each task. Changing
 Definitions/options belong here. TASK_FIELD_VALUES belongs to tasks; this module validates answers but does not own their persistence.
 
 <!-- schema:start -->
+
 ```mermaid
 erDiagram
     WORKSPACES ||--o{ CUSTOM_FIELD_DEFINITIONS : scopes
@@ -41,42 +42,43 @@ erDiagram
         decimal position
     }
 ```
+
 <!-- schema:end -->
 
 Definitions attach to space/folder/list, not workspace defaults. Resolve in that ancestor order, collecting definitions with no overrides. Keys are immutable and unique across the workspace, including sibling branches. This deliberately rejects duplicate semantic names/keys instead of introducing collision precedence. Display labels may repeat, but keys may not.
 
 Order fields by owner level (space, folder, list), then configured position and stable ID. Inherited fields are edited at their owning container. The UI identifies that owner.
 
-| Type | Accepted answer | Required empty check |
-| --- | --- | --- |
-| text | String | Empty/whitespace-only text is missing. |
-| number | Finite JSON number; no numeric-string coercion | 0 is valid. |
-| single_select | One option ID belonging to this definition | Missing/null is missing. |
-| multi_select | Array of distinct valid option IDs | Empty array is missing. |
-| date | Real calendar date in YYYY-MM-DD | Missing/null is missing. |
-| checkbox | Boolean | false is valid. |
+| Type          | Accepted answer                                | Required empty check                   |
+| ------------- | ---------------------------------------------- | -------------------------------------- |
+| text          | String                                         | Empty/whitespace-only text is missing. |
+| number        | Finite JSON number; no numeric-string coercion | 0 is valid.                            |
+| single_select | One option ID belonging to this definition     | Missing/null is missing.               |
+| multi_select  | Array of distinct valid option IDs             | Empty array is missing.                |
+| date          | Real calendar date in YYYY-MM-DD               | Missing/null is missing.               |
+| checkbox      | Boolean                                        | false is valid.                        |
 
 Select option labels/colors/order may change without changing option IDs. A required checkbox means an explicit boolean answer, not "must be checked." Future consent semantics would be a different rule.
 
-| Mutation | Safety policy |
-| --- | --- |
-| Create/update values | Validate the complete resulting task state against the resolved schema. |
-| Clear optional value | API null removes its value row; missing patch key preserves existing value. |
-| Delete used field or option | Block with 409, including usage by retained archived tasks. |
-| Change type with any stored values | Block; do not coerce existing answers. |
-| Make required | Check every affected retained task has a valid nonempty answer before committing. |
+| Mutation                           | Safety policy                                                                     |
+| ---------------------------------- | --------------------------------------------------------------------------------- |
+| Create/update values               | Validate the complete resulting task state against the resolved schema.           |
+| Clear optional value               | API null removes its value row; missing patch key preserves existing value.       |
+| Delete used field or option        | Block with 409, including usage by retained archived tasks.                       |
+| Change type with any stored values | Block; do not coerce existing answers.                                            |
+| Make required                      | Check every affected retained task has a valid nonempty answer before committing. |
 
 An optional field may have no value row. Unknown keys and invalid options/types produce 400 with an exact customFields path. JSONB option IDs are validated in the workflow; they are not element-level SQL FKs.
 
 ## 3. Connections and interfaces
 
-| Consumer | Public capability |
-| --- | --- |
-| Hierarchy | Ancestor/descendant scope used by schema resolution and impact checks. |
-| Task workflow | Resolved definitions plus `validateResultingValues`; return validated values keyed by definition ID. |
-| Move workflow | Destination schema, missing requirements, incompatible/source-only keys, and validation errors. |
+| Consumer        | Public capability                                                                                                 |
+| --------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Hierarchy       | Ancestor/descendant scope used by schema resolution and impact checks.                                            |
+| Task workflow   | Resolved definitions plus `validateResultingValues`; return validated values keyed by definition ID.              |
+| Move workflow   | Destination schema, missing requirements, incompatible/source-only keys, and validation errors.                   |
 | Config workflow | Candidate definition/options, affected schema results, safe-change checks; persistence only after usage approval. |
-| Web | Resolved input definitions/options/source owner and actionable error paths. |
+| Web             | Resolved input definitions/options/source owner and actionable error paths.                                       |
 
 Validation itself is a pure rule operation once a schema and proposed resulting values are supplied. It must not read task tables. Task queries/value persistence go through the task service, coordinated by workflows. HTTP definition/value routes are in [API/contracts](api-contracts.md).
 
@@ -150,17 +152,17 @@ Adding a required definition to an existing scope is subject to the same safety 
 
 Build definition/resolver/validator in Day 2, connect task forms/value writes immediately, and add admin field forms/safety checks in Day 3. Day 4 implements these cases.
 
-| ID | Test TODO: setup/action -> expected result |
-| --- | --- |
-| FIELD-01 | Definitions at space/folder/list -> additive schema with correct owner/order. |
-| FIELD-02 | Duplicate workspace key or child override attempt -> reject. |
-| FIELD-03 | All six valid types -> accepted; 0/false remain meaningful values. |
-| FIELD-04 | String for number, invalid date, duplicate/foreign option -> 400 with field path. |
-| FIELD-05 | Create missing required answer or clear required value -> 400. |
-| FIELD-06 | Patch omits a key -> preserve; null optional key -> remove row. |
-| FIELD-07 | Delete used field/option, including archived usage -> 409. |
-| FIELD-08 | Type change with stored answers -> 409; label/option label reorder -> preserves IDs/answers. |
-| FIELD-09 | New required definition or required=true with unsatisfied tasks -> 409 and no partial config change. |
+| ID       | Test TODO: setup/action -> expected result                                                            |
+| -------- | ----------------------------------------------------------------------------------------------------- |
+| FIELD-01 | Definitions at space/folder/list -> additive schema with correct owner/order.                         |
+| FIELD-02 | Duplicate workspace key or child override attempt -> reject.                                          |
+| FIELD-03 | All six valid types -> accepted; 0/false remain meaningful values.                                    |
+| FIELD-04 | String for number, invalid date, duplicate/foreign option -> 400 with field path.                     |
+| FIELD-05 | Create missing required answer or clear required value -> 400.                                        |
+| FIELD-06 | Patch omits a key -> preserve; null optional key -> remove row.                                       |
+| FIELD-07 | Delete used field/option, including archived usage -> 409.                                            |
+| FIELD-08 | Type change with stored answers -> 409; label/option label reorder -> preserves IDs/answers.          |
+| FIELD-09 | New required definition or required=true with unsatisfied tasks -> 409 and no partial config change.  |
 | FIELD-10 | Move lacks destination required answer or retains source-only answer -> explicit correction required. |
 
 For changes, update this guide, [ADR-0003](../adr/0003-scoped-configuration.md), task/move workflows, form rendering/error paths, seed answers, and test TODOs. A new field type requires validation and input rendering, not merely a new enum value.

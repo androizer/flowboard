@@ -23,7 +23,9 @@ export function App() {
         if (active) setSession({ status: 'signed-out' });
       }
     })();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, []);
 
   async function signIn(loginIdentifier: string, password: string) {
@@ -37,9 +39,17 @@ export function App() {
     setSession({ status: 'signed-out' });
   }
 
-  return <ConfigProvider theme={{ token: { colorPrimary: '#1677ff', borderRadius: 10 } }}>
-    {session.status === 'loading' && <main className="app-loading"><Spin size="large" tip="Restoring your session…" /></main>}
-    {session.status === 'signed-out' && <LoginScreen onSignIn={signIn} />}
-    {session.status === 'signed-in' && <Dashboard actor={session.actor} accessToken={session.accessToken} onSignOut={signOut} />}
-  </ConfigProvider>;
+  return (
+    <ConfigProvider theme={{ token: { colorPrimary: '#1677ff', borderRadius: 10 } }}>
+      {session.status === 'loading' && (
+        <main className="app-loading">
+          <Spin size="large" tip="Restoring your session…" />
+        </main>
+      )}
+      {session.status === 'signed-out' && <LoginScreen onSignIn={signIn} />}
+      {session.status === 'signed-in' && (
+        <Dashboard actor={session.actor} accessToken={session.accessToken} onSignOut={signOut} />
+      )}
+    </ConfigProvider>
+  );
 }

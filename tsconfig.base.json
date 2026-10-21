@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@flowboard/contracts": ["libs/shared/contracts/src/index.ts"]
+    }
+  }
+}

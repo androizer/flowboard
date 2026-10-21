@@ -20,14 +20,14 @@ Engineering owns one STATUS_SETS row; its STATUSES are todo/in_progress/done. De
 
 CUSTOM_FIELD_DEFINITIONS and CUSTOM_FIELD_OPTIONS establish:
 
-| Owner | Definition | Example option/value |
-| --- | --- | --- |
-| Engineering | effort, required number | 3 |
-| Q2 Launch | work_type, required single_select | Bug option O1 or Feature option O2 |
-| Q2 Launch | tags, optional multi_select | Customer reported O3, Urgent O4 |
-| Backlog | customer_note, optional text | Customer report description |
-| Delivery | release_date, required date | 2026-10-30 |
-| Delivery | verified, optional checkbox | false |
+| Owner       | Definition                        | Example option/value               |
+| ----------- | --------------------------------- | ---------------------------------- |
+| Engineering | effort, required number           | 3                                  |
+| Q2 Launch   | work_type, required single_select | Bug option O1 or Feature option O2 |
+| Q2 Launch   | tags, optional multi_select       | Customer reported O3, Urgent O4    |
+| Backlog     | customer_note, optional text      | Customer report description        |
+| Delivery    | release_date, required date       | 2026-10-30                         |
+| Delivery    | verified, optional checkbox       | false                              |
 
 The field key identifies the question; option IDs identify choices. Labels may change without changing those references.
 
@@ -68,10 +68,10 @@ Refresh consumes R1 and creates R2 under S1. Replaying consumed R1 commits S1.re
 
 Later, a verified provider identity maps to U2 and converges before the same Flowboard session/token service. It creates a new session with that external auth_identity_id. Permissions still read WORKSPACE_MEMBERSHIPS and CONTAINER_GRANTS; T1 and its user/value links do not change. Provider tokens never become business API credentials.
 
-| Part of the story | Tables touched |
-| --- | --- |
-| Identity/login | USERS, AUTH_IDENTITIES, USER_CREDENTIALS, WORKSPACE_MEMBERSHIPS, WORKSPACES |
-| Login lifetime | AUTH_SESSIONS, REFRESH_TOKENS |
-| Organization/access | CONTAINERS, CONTAINER_GRANTS |
-| Configuration | STATUS_SETS, STATUSES, CUSTOM_FIELD_DEFINITIONS, CUSTOM_FIELD_OPTIONS |
-| Actual work | TASKS, TASK_ASSIGNEES, TASK_FIELD_VALUES |
+| Part of the story   | Tables touched                                                              |
+| ------------------- | --------------------------------------------------------------------------- |
+| Identity/login      | USERS, AUTH_IDENTITIES, USER_CREDENTIALS, WORKSPACE_MEMBERSHIPS, WORKSPACES |
+| Login lifetime      | AUTH_SESSIONS, REFRESH_TOKENS                                               |
+| Organization/access | CONTAINERS, CONTAINER_GRANTS                                                |
+| Configuration       | STATUS_SETS, STATUSES, CUSTOM_FIELD_DEFINITIONS, CUSTOM_FIELD_OPTIONS       |
+| Actual work         | TASKS, TASK_ASSIGNEES, TASK_FIELD_VALUES                                    |

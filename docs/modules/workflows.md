@@ -12,25 +12,25 @@ This module owns the order of checks and the all-or-nothing boundary. It adds no
 
 ## 2. Ownership, data, and decisions
 
-| Concern | Owner called by the workflow |
-| --- | --- |
-| Current active membership | Identity |
-| Actual list/parent/archive state | Hierarchy |
-| Read/edit/admin access | Permissions |
-| Effective columns | Statuses |
-| Effective inputs and valid answers | Custom fields |
-| Task/version/assignments/answer rows/placement | Tasks |
-| Transaction/snapshot and lock | Persistence |
+| Concern                                        | Owner called by the workflow |
+| ---------------------------------------------- | ---------------------------- |
+| Current active membership                      | Identity                     |
+| Actual list/parent/archive state               | Hierarchy                    |
+| Read/edit/admin access                         | Permissions                  |
+| Effective columns                              | Statuses                     |
+| Effective inputs and valid answers             | Custom fields                |
+| Task/version/assignments/answer rows/placement | Tasks                        |
+| Transaction/snapshot and lock                  | Persistence                  |
 
 No owned ER block exists because no workflow table exists. The [complete ER](../er-diagram.md) shows the referenced owners. Cross-table writes are performed through public owner services sharing the same transaction context; there are no direct sibling repository imports.
 
-| Decision | Consequence |
-| --- | --- |
-| Workspace lock for domain writes | All task/config/container/grant mutations see a serial order within this small workspace. |
-| Refresh membership/access inside transaction | An Actor from the HTTP guard is not the only authority for a later mutation. |
-| Validate before persisting | Candidate configs and moves remain temporary until every affected record is checked. |
-| Consistent board snapshot | Task keys/answers and the config used to interpret them come from one snapshot. |
-| Separate auth transaction | Refresh uses session/token locks in identity, not the workspace write lock. |
+| Decision                                     | Consequence                                                                               |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Workspace lock for domain writes             | All task/config/container/grant mutations see a serial order within this small workspace. |
+| Refresh membership/access inside transaction | An Actor from the HTTP guard is not the only authority for a later mutation.              |
+| Validate before persisting                   | Candidate configs and moves remain temporary until every affected record is checked.      |
+| Consistent board snapshot                    | Task keys/answers and the config used to interpret them come from one snapshot.           |
+| Separate auth transaction                    | Refresh uses session/token locks in identity, not the workspace write lock.               |
 
 The API guard establishes identity. A domain workflow then resolves the stored resource and its permissions; caller-supplied parent/list IDs cannot override a task's real source list. Grant changes use the same domain workspace lock as task/config writes. Requests already authorized before logout may finish; new requests cannot use a revoked session.
 
@@ -38,13 +38,13 @@ The API guard establishes identity. A domain workflow then resolves the stored r
 
 Domain HTTP handlers call workflows. Workflows return transport-safe projections/errors through [API/contracts](api-contracts.md). Identity routes stay in identity. All allowed imports are explicit in [architecture](../architecture.md).
 
-| Workflow | Result |
-| --- | --- |
-| Load tree/board/list/detail | Authorized projection only, with the relevant resolved config. |
-| Create/update/archive/reorder task | One validated task mutation with version and placement updates. |
-| Move task | One source/destination/config/value/placement mutation. |
-| Change status/field configuration | Candidate checked against all affected retained tasks, then applied or rejected. |
-| Administer containers/grants | Authorized structural/access change under the same lock. |
+| Workflow                           | Result                                                                           |
+| ---------------------------------- | -------------------------------------------------------------------------------- |
+| Load tree/board/list/detail        | Authorized projection only, with the relevant resolved config.                   |
+| Create/update/archive/reorder task | One validated task mutation with version and placement updates.                  |
+| Move task                          | One source/destination/config/value/placement mutation.                          |
+| Change status/field configuration  | Candidate checked against all affected retained tasks, then applied or rejected. |
+| Administer containers/grants       | Authorized structural/access change under the same lock.                         |
 
 Board responses contain a complete resolved status/field configuration plus a task page. The web client loads all pages for the small selected-list dataset. Each page is internally consistent; if later pages reveal incompatible config or failed validation, discard/refetch rather than combine contradictory data. We do not claim one database snapshot persists across separate HTTP requests.
 
@@ -159,16 +159,16 @@ Status impact skips descendants protected by a lower status override. Field impa
 
 Create read/task workflows in Day 2 and config/admin workflows in Day 3. Controllers, curl, and future channels all use these same workflows. Implement tests on Day 4.
 
-| ID | Test TODO: setup/action -> expected result |
-| --- | --- |
-| FLOW-01 | Board load -> authorize before returning columns/fields/tasks; consistent single-response snapshot. |
-| FLOW-02 | Move lacks compatible status, required value, or explicit clear -> reject and preserve source task/answers/order/version. |
-| FLOW-03 | Complete move corrections -> one commit, same ID, valid destination, preserved assignments/shared values. |
-| FLOW-04 | Source/destination inaccessible or archived -> no data leak/mutation. |
+| ID      | Test TODO: setup/action -> expected result                                                                                    |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| FLOW-01 | Board load -> authorize before returning columns/fields/tasks; consistent single-response snapshot.                           |
+| FLOW-02 | Move lacks compatible status, required value, or explicit clear -> reject and preserve source task/answers/order/version.     |
+| FLOW-03 | Complete move corrections -> one commit, same ID, valid destination, preserved assignments/shared values.                     |
+| FLOW-04 | Source/destination inaccessible or archived -> no data leak/mutation.                                                         |
 | FLOW-05 | Config delete/reset/required change -> checks all retained affected tasks, respects lower overrides, no partial config write. |
-| FLOW-06 | Task/config or task/grant race -> serial workspace order, no stale-validation commit. |
-| FLOW-07 | Task version stale -> 409; unrelated auth refresh does not require workspace lock. |
-| FLOW-08 | Failure injected between owned writes -> rollback every change. |
-| FLOW-09 | Separate board pages straddle config change -> client refetches rather than assumes a cross-request snapshot. |
+| FLOW-06 | Task/config or task/grant race -> serial workspace order, no stale-validation commit.                                         |
+| FLOW-07 | Task version stale -> 409; unrelated auth refresh does not require workspace lock.                                            |
+| FLOW-08 | Failure injected between owned writes -> rollback every change.                                                               |
+| FLOW-09 | Separate board pages straddle config change -> client refetches rather than assumes a cross-request snapshot.                 |
 
 When changing a workflow, update the order diagram, transaction boundary, owner interfaces, HTTP contract, and failure example together. Do not move cross-domain validation into a task or config repository to simplify a controller.

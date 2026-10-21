@@ -6,41 +6,41 @@ Start here. These documents explain what Flowboard does, why it is structured th
 
 ## 1. Find the right guide
 
-| I want to understand... | Read |
-| --- | --- |
-| The whole application and module links | [Architecture](architecture.md) and [business walkthrough](business-walkthrough.md) |
-| When to build each part | [Implementation roadmap](implementation-plan.md) |
-| Every table and relationship | [Complete ER reference](er-diagram.md) |
-| A particular user action and its diagrams | [Workflow index](workflow-index.md) |
-| Assignment coverage and tests | [Requirements](requirements.md) and [test plan](test-plan.md) |
-| How to make a future change safely | [Change guide](change-guide.md) and [glossary](glossary.md) |
+| I want to understand...                   | Read                                                                                |
+| ----------------------------------------- | ----------------------------------------------------------------------------------- |
+| The whole application and module links    | [Architecture](architecture.md) and [business walkthrough](business-walkthrough.md) |
+| When to build each part                   | [Implementation roadmap](implementation-plan.md)                                    |
+| Every table and relationship              | [Complete ER reference](er-diagram.md)                                              |
+| A particular user action and its diagrams | [Workflow index](workflow-index.md)                                                 |
+| Assignment coverage and tests             | [Requirements](requirements.md) and [test plan](test-plan.md)                       |
+| How to make a future change safely        | [Change guide](change-guide.md) and [glossary](glossary.md)                         |
 
 ## 2. Module guides: the source of truth for behavior
 
 Each guide contains a plain-language example, ownership, decisions, links, interfaces, diagrams, failure cases, build steps, and test TODOs.
 
-| Module | What it does | Main data |
-| --- | --- | --- |
-| [Identity and authentication](modules/identity.md) | Signs people in, renews access, resolves the current person | Users, identities, credentials, memberships, sessions, refresh tokens |
-| [Hierarchy](modules/hierarchy.md) | Organizes workspace, spaces, folders, and lists | Workspaces, containers |
-| [Permissions](modules/permissions.md) | Decides what the current person can see or change | Container grants |
-| [Statuses](modules/statuses.md) | Finds the correct columns for a selected list | Status sets, statuses |
-| [Custom fields](modules/custom-fields.md) | Defines additional task inputs and validates answers | Field definitions, options |
-| [Tasks](modules/tasks.md) | Stores work items, assignments, values, and order | Tasks, assignments, field values |
-| [Application workflows](modules/workflows.md) | Coordinates operations that touch several modules | No additional tables |
-| [Persistence and runtime](modules/persistence-runtime.md) | Runs PostgreSQL, transactions, migrations, seeds, and Docker | Infrastructure only |
-| [Web client](modules/web-client.md) | Presents login, navigation, board, table, detail, and configuration | No browser-owned business database |
-| [API and contracts](modules/api-contracts.md) | Gives clients one predictable HTTP language | No additional tables |
+| Module                                                    | What it does                                                        | Main data                                                             |
+| --------------------------------------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| [Identity and authentication](modules/identity.md)        | Signs people in, renews access, resolves the current person         | Users, identities, credentials, memberships, sessions, refresh tokens |
+| [Hierarchy](modules/hierarchy.md)                         | Organizes workspace, spaces, folders, and lists                     | Workspaces, containers                                                |
+| [Permissions](modules/permissions.md)                     | Decides what the current person can see or change                   | Container grants                                                      |
+| [Statuses](modules/statuses.md)                           | Finds the correct columns for a selected list                       | Status sets, statuses                                                 |
+| [Custom fields](modules/custom-fields.md)                 | Defines additional task inputs and validates answers                | Field definitions, options                                            |
+| [Tasks](modules/tasks.md)                                 | Stores work items, assignments, values, and order                   | Tasks, assignments, field values                                      |
+| [Application workflows](modules/workflows.md)             | Coordinates operations that touch several modules                   | No additional tables                                                  |
+| [Persistence and runtime](modules/persistence-runtime.md) | Runs PostgreSQL, transactions, migrations, seeds, and Docker        | Infrastructure only                                                   |
+| [Web client](modules/web-client.md)                       | Presents login, navigation, board, table, detail, and configuration | No browser-owned business database                                    |
+| [API and contracts](modules/api-contracts.md)             | Gives clients one predictable HTTP language                         | No additional tables                                                  |
 
 ## 3. Where decisions live
 
-| Record | Decision |
-| --- | --- |
-| [ADR-0001](adr/0001-modular-monolith.md) | Nx/Yarn, module boundaries, React/AntD, NestJS/PostgreSQL |
-| [ADR-0002](adr/0002-hierarchy-and-access.md) | Strict hierarchy, archival, membership, grants |
-| [ADR-0003](adr/0003-scoped-configuration.md) | Replacement status sets, additive fields, safe configuration edits |
-| [ADR-0004](adr/0004-authentication.md) | User-owned credentials and shared local/SSO sessions and tokens |
-| [ADR-0005](adr/0005-delivery-and-consistency.md) | Transactions, API conventions, Docker, testing, future IPC |
+| Record                                           | Decision                                                           |
+| ------------------------------------------------ | ------------------------------------------------------------------ |
+| [ADR-0001](adr/0001-modular-monolith.md)         | Nx/Yarn, module boundaries, React/AntD, NestJS/PostgreSQL          |
+| [ADR-0002](adr/0002-hierarchy-and-access.md)     | Strict hierarchy, archival, membership, grants                     |
+| [ADR-0003](adr/0003-scoped-configuration.md)     | Replacement status sets, additive fields, safe configuration edits |
+| [ADR-0004](adr/0004-authentication.md)           | User-owned credentials and shared local/SSO sessions and tokens    |
+| [ADR-0005](adr/0005-delivery-and-consistency.md) | Transactions, API conventions, Docker, testing, future IPC         |
 
 An ADR records why a decision was made. The owning module guide states its exact current behavior. An implementation change updates both when it changes that decision. If they conflict, resolve the conflict explicitly; do not silently choose whichever is easier.
 

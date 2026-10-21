@@ -16,11 +16,11 @@ This keeps the operational setup small while making boundaries visible in import
 
 ## Alternatives and consequences
 
-| Alternative | Reason not chosen |
-| --- | --- |
-| Microservices now | Adds deployment, IPC, retry, and consistency work before the domain is proven. |
+| Alternative           | Reason not chosen                                                                  |
+| --------------------- | ---------------------------------------------------------------------------------- |
+| Microservices now     | Adds deployment, IPC, retry, and consistency work before the domain is proven.     |
 | Plain workspaces only | Simpler scaffolding, but lacks our selected Nx project graph and boundary tooling. |
-| Custom UI controls | More design work than the assignment needs. |
+| Custom UI controls    | More design work than the assignment needs.                                        |
 
 Nx does not validate business rules. Import constraints, module specs, and later domain tests are all required. No hosted Nx service is required for the supported Docker path.
 

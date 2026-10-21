@@ -15,6 +15,7 @@ Signing in is handled by identity. A private branch is not secured merely by hid
 Grants belong to this module; users/memberships belong to identity and containers to hierarchy.
 
 <!-- schema:start -->
+
 ```mermaid
 erDiagram
     CONTAINERS ||--o{ CONTAINER_GRANTS : has_grants
@@ -28,29 +29,30 @@ erDiagram
         string mode "allow, deny"
     }
 ```
+
 <!-- schema:end -->
 
 One grant per `(workspace_id, container_id, user_id)`; updating mode replaces that decision, not adds a conflicting second row. Composite FKs require a member and container in the same workspace.
 
-| Decision | Result |
-| --- | --- |
-| Membership first | Inactive users/memberships are rejected before any admin bypass. |
-| Admin | Active admin bypasses public/private/grant restrictions. |
-| Deny precedence | Any deny on the resource path blocks a member, even with a later allow. |
-| Private node | Needs an allow at that node or an already-visited ancestor. A later child allow cannot reopen an inaccessible parent. |
-| Task edits vs administration | Members edit tasks in accessible lists; container/config/grant writes are admin-only. |
+| Decision                     | Result                                                                                                                |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Membership first             | Inactive users/memberships are rejected before any admin bypass.                                                      |
+| Admin                        | Active admin bypasses public/private/grant restrictions.                                                              |
+| Deny precedence              | Any deny on the resource path blocks a member, even with a later allow.                                               |
+| Private node                 | Needs an allow at that node or an already-visited ancestor. A later child allow cannot reopen an inaccessible parent. |
+| Task edits vs administration | Members edit tasks in accessible lists; container/config/grant writes are admin-only.                                 |
 
 Public nodes require active membership and no denied ancestor. An inherited allow can open private descendants unless a deny blocks them. Assignment never grants access. Team grants, role hierarchies, and per-action edit grants are future scope.
 
 ## 3. Connections and interfaces
 
-| Connection | Contract |
-| --- | --- |
-| Identity | Receives a trusted current Actor, never raw token/body roles. Workflow refreshes membership inside writes. |
-| Hierarchy | Reads one ordered path from space to target; rejects archived or invalid scope through hierarchy. |
-| Workflows | `assertCanReadContainer`, `assertCanEditTasks`, `assertAdmin`, filtered tree decisions, both sides of move. |
-| Web | Gets already-filtered data and optional capability flags; UI hiding never replaces a server check. |
-| Own repository | Loads grants in a bounded batch for the actor/path, avoiding per-node permission queries. |
+| Connection     | Contract                                                                                                    |
+| -------------- | ----------------------------------------------------------------------------------------------------------- |
+| Identity       | Receives a trusted current Actor, never raw token/body roles. Workflow refreshes membership inside writes.  |
+| Hierarchy      | Reads one ordered path from space to target; rejects archived or invalid scope through hierarchy.           |
+| Workflows      | `assertCanReadContainer`, `assertCanEditTasks`, `assertAdmin`, filtered tree decisions, both sides of move. |
+| Web            | Gets already-filtered data and optional capability flags; UI hiding never replaces a server check.          |
+| Own repository | Loads grants in a bounded batch for the actor/path, avoiding per-node permission queries.                   |
 
 Keep raw grant rows and blocking path details private from ordinary member error messages. A forbidden response must not list inaccessible sibling/container names. Admin config screens may show their own grant data.
 
@@ -137,17 +139,17 @@ Changing a container's public/private flag follows the hierarchy admin transacti
 
 Build the backend policy with hierarchy in Days 1-2, apply it to every workflow before UI completion, and add admin grant controls in Day 3. Do not defer enforcement until after task APIs exist.
 
-| ID | Test TODO: setup/action -> expected result |
-| --- | --- |
+| ID      | Test TODO: setup/action -> expected result                                         |
+| ------- | ---------------------------------------------------------------------------------- |
 | PERM-01 | Alice active admin -> all active branches and task edits/admin actions accessible. |
-| PERM-02 | Bob opens tree -> private Strategy hidden; Security allow respected. |
-| PERM-03 | Carol opens tree -> Roadmap visible through allowed Strategy; Delivery denied. |
-| PERM-04 | Deny on parent and allow on child -> still 403; no child promoted into tree. |
-| PERM-05 | Private parent without allow, allow only on child -> parent blocks access. |
-| PERM-06 | Guessed task URL -> stored list's permissions enforced. |
-| PERM-07 | Assigned task in inaccessible list -> assignment does not make it visible. |
-| PERM-08 | Inactive admin membership -> no bypass; reject. |
-| PERM-09 | Member config/container/grant write -> 403 even if list accessible. |
-| PERM-10 | Move with either side inaccessible -> no mutation; no destination schema leak. |
+| PERM-02 | Bob opens tree -> private Strategy hidden; Security allow respected.               |
+| PERM-03 | Carol opens tree -> Roadmap visible through allowed Strategy; Delivery denied.     |
+| PERM-04 | Deny on parent and allow on child -> still 403; no child promoted into tree.       |
+| PERM-05 | Private parent without allow, allow only on child -> parent blocks access.         |
+| PERM-06 | Guessed task URL -> stored list's permissions enforced.                            |
+| PERM-07 | Assigned task in inaccessible list -> assignment does not make it visible.         |
+| PERM-08 | Inactive admin membership -> no bypass; reject.                                    |
+| PERM-09 | Member config/container/grant write -> 403 even if list accessible.                |
+| PERM-10 | Move with either side inaccessible -> no mutation; no destination schema leak.     |
 
 Changing precedence or edit rights requires [ADR-0002](../adr/0002-hierarchy-and-access.md), the tree/direct-access examples, and all read/write workflow call sites to change together. Do not implement different permission algorithms per screen.

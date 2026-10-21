@@ -24,7 +24,7 @@ services:
       - internal
       - db-access
     ports:
-      - "127.0.0.1:5433:5432"
+      - '127.0.0.1:5433:5432'
 
 networks:
   # Enables Docker Desktop port forwarding without adding the web service.

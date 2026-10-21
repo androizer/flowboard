@@ -22,29 +22,29 @@ The supplied authentication references are preserved here:
 - [Session and refresh-token ER reference](../references/session-token-er.png).
 - [Shared local/SSO sign-in flow reference](../references/shared-sign-in-flow.png).
 
-| Previously inconsistent detail | Authoritative decision |
-| --- | --- |
-| Credentials attached to an auth identity | `USER_CREDENTIALS.user_id` is its PK and FK to `USERS.id`. There is no `auth_identity_id` in this table. |
-| An external provider replacing Flowboard's session/token machinery | Local and future SSO verification converge before the same Flowboard session creation and token issuance. |
-| Extra refresh-token revocation state | Session revocation is authoritative. `REFRESH_TOKENS` has no `revoked_at` column. |
-| Extra session revocation-reason state | Use the reference's nullable `AUTH_SESSIONS.revoked_at`; do not add a revocation-reason column in this schema. |
-| Missing explanation for a local session's identity | Seed a local `AUTH_IDENTITIES` mapping for each local user, and record that identity on local sessions. |
+| Previously inconsistent detail                                     | Authoritative decision                                                                                         |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| Credentials attached to an auth identity                           | `USER_CREDENTIALS.user_id` is its PK and FK to `USERS.id`. There is no `auth_identity_id` in this table.       |
+| An external provider replacing Flowboard's session/token machinery | Local and future SSO verification converge before the same Flowboard session creation and token issuance.      |
+| Extra refresh-token revocation state                               | Session revocation is authoritative. `REFRESH_TOKENS` has no `revoked_at` column.                              |
+| Extra session revocation-reason state                              | Use the reference's nullable `AUTH_SESSIONS.revoked_at`; do not add a revocation-reason column in this schema. |
+| Missing explanation for a local session's identity                 | Seed a local `AUTH_IDENTITIES` mapping for each local user, and record that identity on local sessions.        |
 
 These corrections preserve the reference tables' columns and relationships. Do not silently change these relationships in migrations, DTOs, implementation, or later diagrams. Additional auth columns or a provider-token-based API would require an explicit ADR revision.
 
 ### Stack and boundaries
 
-| Area | Decision |
-| --- | --- |
-| Monorepo | Nx with Yarn Workspaces; domain libraries are separate Nx projects. |
+| Area            | Decision                                                                                                      |
+| --------------- | ------------------------------------------------------------------------------------------------------------- |
+| Monorepo        | Nx with Yarn Workspaces; domain libraries are separate Nx projects.                                           |
 | Package manager | Yarn 4, exact version pinned, one root `yarn.lock`, `nodeLinker: node-modules`, immutable CI/Docker installs. |
-| Frontend | React, TypeScript, Vite, Ant Design, React Router, TanStack Query, dnd-kit. |
-| Backend | NestJS modular monolith. |
-| Persistence | PostgreSQL, Prisma, checked-in migrations, SQL constraints where Prisma alone cannot express them. |
-| Authentication | Seeded-user password login, Flowboard JWT access tokens, database sessions, opaque rotating refresh tokens. |
-| Authorization | Database-owned workspace roles and ancestor-aware container grants. |
-| Runtime | Three Compose services: web, API, database; no required cache, worker, queue, or external identity account. |
-| Tests | Document scenarios during feature development; implement required tests after feature freeze. |
+| Frontend        | React, TypeScript, Vite, Ant Design, React Router, TanStack Query, dnd-kit.                                   |
+| Backend         | NestJS modular monolith.                                                                                      |
+| Persistence     | PostgreSQL, Prisma, checked-in migrations, SQL constraints where Prisma alone cannot express them.            |
+| Authentication  | Seeded-user password login, Flowboard JWT access tokens, database sessions, opaque rotating refresh tokens.   |
+| Authorization   | Database-owned workspace roles and ancestor-aware container grants.                                           |
+| Runtime         | Three Compose services: web, API, database; no required cache, worker, queue, or external identity account.   |
+| Tests           | Document scenarios during feature development; implement required tests after feature freeze.                 |
 
 ```text
 apps/
@@ -70,16 +70,16 @@ docs/
   references/
 ```
 
-| Library | Ownership |
-| --- | --- |
-| Identity | Users, credentials, identity links, sign-in verification, sessions, access/refresh tokens, trusted caller resolution. |
-| Hierarchy | Containers, valid ancestry, sibling ordering, archival. |
-| Permissions | Grants and visibility/access decisions. |
-| Statuses | Status sets, definitions, resolution, config validation. |
-| Custom fields | Definitions, select options, schema resolution, typed validation. |
-| Tasks | Tasks, assignments, custom values, placement. |
-| Workflows | Cross-domain authorization, validation, and atomic mutations. |
-| Persistence | Connection and transaction coordination; each domain retains its own repositories. |
+| Library       | Ownership                                                                                                             |
+| ------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Identity      | Users, credentials, identity links, sign-in verification, sessions, access/refresh tokens, trusted caller resolution. |
+| Hierarchy     | Containers, valid ancestry, sibling ordering, archival.                                                               |
+| Permissions   | Grants and visibility/access decisions.                                                                               |
+| Statuses      | Status sets, definitions, resolution, config validation.                                                              |
+| Custom fields | Definitions, select options, schema resolution, typed validation.                                                     |
+| Tasks         | Tasks, assignments, custom values, placement.                                                                         |
+| Workflows     | Cross-domain authorization, validation, and atomic mutations.                                                         |
+| Persistence   | Connection and transaction coordination; each domain retains its own repositories.                                    |
 
 Use Nx project tags, `@nx/enforce-module-boundaries`, public-entry-point import restrictions, and cycle checks. Domain libraries cannot read sibling tables directly. Cross-domain checks are coordinated through exported services, with a shared transaction context when necessary. Provider SDKs and token implementation details stay within identity. Shared contracts contain API types/enums, without ORM or provider types.
 
@@ -89,12 +89,12 @@ The four-day target is approximately 32 focused hours. Real authentication adds 
 
 Repeated entities across views are the same tables. The business tables are:
 
-| Group | Tables |
-| --- | --- |
+| Group                       | Tables                                                                            |
+| --------------------------- | --------------------------------------------------------------------------------- |
 | Identity and authentication | `USERS`, `AUTH_IDENTITIES`, `USER_CREDENTIALS`, `AUTH_SESSIONS`, `REFRESH_TOKENS` |
-| Membership and hierarchy | `WORKSPACES`, `WORKSPACE_MEMBERSHIPS`, `CONTAINERS`, `CONTAINER_GRANTS` |
-| Configuration | `STATUS_SETS`, `STATUSES`, `CUSTOM_FIELD_DEFINITIONS`, `CUSTOM_FIELD_OPTIONS` |
-| Tasks | `TASKS`, `TASK_ASSIGNEES`, `TASK_FIELD_VALUES` |
+| Membership and hierarchy    | `WORKSPACES`, `WORKSPACE_MEMBERSHIPS`, `CONTAINERS`, `CONTAINER_GRANTS`           |
+| Configuration               | `STATUS_SETS`, `STATUSES`, `CUSTOM_FIELD_DEFINITIONS`, `CUSTOM_FIELD_OPTIONS`     |
+| Tasks                       | `TASKS`, `TASK_ASSIGNEES`, `TASK_FIELD_VALUES`                                    |
 
 Migration history and seed-version markers are technical bookkeeping outside these 16 business tables. Persist datetime values as UTC PostgreSQL `timestamptz`; custom date fields use validated `YYYY-MM-DD` values.
 
@@ -337,19 +337,19 @@ Tasks reference exactly one list. The workflow checks the referenced container's
 
 ### Required constraints and ownership invariants
 
-| Rule | Enforcement |
-| --- | --- |
-| Stable external account mapping | Unique `(issuer, subject)`; external issuer/subject comparison follows provider semantics, without email-based linking. |
-| Optional local password per user | `USER_CREDENTIALS.user_id` PK/FK; normalized unique `login_identifier`. |
+| Rule                                      | Enforcement                                                                                                                                                                       |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Stable external account mapping           | Unique `(issuer, subject)`; external issuer/subject comparison follows provider semantics, without email-based linking.                                                           |
+| Optional local password per user          | `USER_CREDENTIALS.user_id` PK/FK; normalized unique `login_identifier`.                                                                                                           |
 | Exactly one local identity per local user | Partial unique index on `AUTH_IDENTITIES.user_id` for fixed issuer `urn:flowboard:local`; subject is the internal user UUID string. External identities may be multiple per user. |
-| Session identity belongs to session user | Composite FK `(auth_identity_id, user_id)` -> `AUTH_IDENTITIES(id, user_id)`, with a supporting unique key. Both session references are non-null. |
-| Token chain stays within one session | Composite parent FK `(parent_token_id, session_id)` -> `REFRESH_TOKENS(id, session_id)`; unique non-null `parent_token_id`; immutable parent after insertion. |
-| Expiry and rotation history | Session/token expiry follows creation; token expiry never exceeds session expiry; one atomic consumption and successor creation. |
-| Refresh secret storage | Unique `token_hash`; never store raw refresh tokens or access tokens. |
-| Membership and grants | Composite membership PK; grants reference membership and container in the same workspace; one grant per `(workspace_id, container_id, user_id)`. |
-| Status configuration | One local set per non-null owner and one default per workspace using partial unique constraints; unique status key within each set. |
-| Field configuration | Unique immutable `(workspace_id, key)`; options reference their field. |
-| Task relations | Composite PKs for assignments and field values; same-workspace composite FKs for parent/list/task/member/definition references, with supporting unique keys. |
+| Session identity belongs to session user  | Composite FK `(auth_identity_id, user_id)` -> `AUTH_IDENTITIES(id, user_id)`, with a supporting unique key. Both session references are non-null.                                 |
+| Token chain stays within one session      | Composite parent FK `(parent_token_id, session_id)` -> `REFRESH_TOKENS(id, session_id)`; unique non-null `parent_token_id`; immutable parent after insertion.                     |
+| Expiry and rotation history               | Session/token expiry follows creation; token expiry never exceeds session expiry; one atomic consumption and successor creation.                                                  |
+| Refresh secret storage                    | Unique `token_hash`; never store raw refresh tokens or access tokens.                                                                                                             |
+| Membership and grants                     | Composite membership PK; grants reference membership and container in the same workspace; one grant per `(workspace_id, container_id, user_id)`.                                  |
+| Status configuration                      | One local set per non-null owner and one default per workspace using partial unique constraints; unique status key within each set.                                               |
+| Field configuration                       | Unique immutable `(workspace_id, key)`; options reference their field.                                                                                                            |
+| Task relations                            | Composite PKs for assignments and field values; same-workspace composite FKs for parent/list/task/member/definition references, with supporting unique keys.                      |
 
 Cross-row rules such as parent types, minimum status categories, and effective schemas are enforced inside application transactions. Normal lifecycle operations archive or revoke rather than cascade-delete business records. Retain consumed token history while its session can still be replayed; later cleanup must not remove active-session replay evidence.
 
@@ -400,16 +400,16 @@ The MVP implements local verification and the shared session/token machinery. SS
 
 ### Password login, access tokens, and session defaults
 
-| Concern | Decision |
-| --- | --- |
-| Local sign-in | Seeded usernames `alice`, `bob`, `carol`; normalize local identifiers by trimming and lowercasing. No registration/recovery screens. |
-| Password storage | Argon2id through an established library, with at least 19 MiB memory, 2 iterations, parallelism 1; verify encoded hashes and permit future rehashing. |
-| Session lifetime | Absolute 7 days from login; refresh does not extend it. |
-| Access JWT | Maximum 10 minutes, capped by remaining session lifetime; claims `sub`, `sid`, `iss`, `aud`, `iat`, `exp`, `jti`. |
-| JWT signing | HS256 through an established library; at least 256-bit random secret; pin verification algorithm, issuer, audience, and expiry validation. |
-| Refresh secret | Opaque cryptographically random value with at least 256 bits of entropy; store only its SHA-256 hash. |
-| Browser storage | Access token in memory; refresh token in a host-only HttpOnly cookie, SameSite=Strict, path `/v1/auth`. No token persistence in localStorage. |
-| Transport | HTTPS and Secure cookie in production; explicit local-demo mode supports HTTP Compose. |
+| Concern                | Decision                                                                                                                                                    |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Local sign-in          | Seeded usernames `alice`, `bob`, `carol`; normalize local identifiers by trimming and lowercasing. No registration/recovery screens.                        |
+| Password storage       | Argon2id through an established library, with at least 19 MiB memory, 2 iterations, parallelism 1; verify encoded hashes and permit future rehashing.       |
+| Session lifetime       | Absolute 7 days from login; refresh does not extend it.                                                                                                     |
+| Access JWT             | Maximum 10 minutes, capped by remaining session lifetime; claims `sub`, `sid`, `iss`, `aud`, `iat`, `exp`, `jti`.                                           |
+| JWT signing            | HS256 through an established library; at least 256-bit random secret; pin verification algorithm, issuer, audience, and expiry validation.                  |
+| Refresh secret         | Opaque cryptographically random value with at least 256 bits of entropy; store only its SHA-256 hash.                                                       |
+| Browser storage        | Access token in memory; refresh token in a host-only HttpOnly cookie, SameSite=Strict, path `/v1/auth`. No token persistence in localStorage.               |
+| Transport              | HTTPS and Secure cookie in production; explicit local-demo mode supports HTTP Compose.                                                                      |
 | Local signing material | Generate once into a named local secrets volume, reuse across restarts, and never commit/print it. Production requires provisioned shared signing material. |
 
 Password defaults follow [OWASP password storage guidance](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html). This application uses established password/JWT libraries rather than implementing cryptographic primitives.
@@ -418,13 +418,13 @@ Invalid identifier/password returns generic `401`. Apply per-instance login thro
 
 An access-request authenticator validates the Flowboard JWT and matching active session, including `sub == session.user_id`. It then resolves the session's identity/user and current active membership into `Actor`. Roles and grants come from PostgreSQL on each request, not from JWT claims. An indexed session lookup intentionally provides immediate revocation; there is no process-local session state or sticky-session requirement.
 
-| Condition | Result |
-| --- | --- |
-| Missing/invalid/expired access token; expired/revoked session | `401` |
-| Valid credentials/identity but inactive user or membership; unknown SSO mapping | `403` |
-| Resource permission denied | `403` |
-| Identity/session persistence unavailable | `503`, with no authentication fallback |
-| Mock `X-User-Id` header | Cannot establish identity; there is no mock authentication mode in this MVP. |
+| Condition                                                                       | Result                                                                       |
+| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Missing/invalid/expired access token; expired/revoked session                   | `401`                                                                        |
+| Valid credentials/identity but inactive user or membership; unknown SSO mapping | `403`                                                                        |
+| Resource permission denied                                                      | `403`                                                                        |
+| Identity/session persistence unavailable                                        | `503`, with no authentication fallback                                       |
+| Mock `X-User-Id` header                                                         | Cannot establish identity; there is no mock authentication mode in this MVP. |
 
 Credential maintenance that changes a password must update `password_changed_at` and revoke the user's local-identity sessions transactionally. No password-change/recovery endpoint is included in this MVP; document that invariant for maintenance and future features.
 
@@ -440,13 +440,13 @@ Serialize refresh within a tab and across tabs with Web Locks; unsupported brows
 
 Require configured allowed origins and JSON bodies for browser login and cookie-authenticated refresh/logout; reject missing/untrusted origins on those cookie-sensitive routes. The curl cookbook supplies the configured Origin and a cookie jar. Keep browser requests same-origin through the frontend proxy and avoid unnecessary CORS allowances.
 
-| Endpoint | Contract |
-| --- | --- |
-| `POST /v1/auth/login` | Verify credentials, create a Flowboard session, return access token/expiry/current-user identity, set refresh cookie. |
-| `POST /v1/auth/refresh` | Rotate cookie token within the same session; return new access token/expiry/current-user identity and set successor cookie. |
-| `POST /v1/auth/logout` | Revoke current cookie-associated session and clear cookie; idempotent. |
-| `POST /v1/auth/logout-all` | Require access JWT; revoke all sessions for its user and clear cookie. |
-| `GET /v1/me` | Require access JWT; return current internal user and workspace role. |
+| Endpoint                   | Contract                                                                                                                    |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `POST /v1/auth/login`      | Verify credentials, create a Flowboard session, return access token/expiry/current-user identity, set refresh cookie.       |
+| `POST /v1/auth/refresh`    | Rotate cookie token within the same session; return new access token/expiry/current-user identity and set successor cookie. |
+| `POST /v1/auth/logout`     | Revoke current cookie-associated session and clear cookie; idempotent.                                                      |
+| `POST /v1/auth/logout-all` | Require access JWT; revoke all sessions for its user and clear cookie.                                                      |
+| `GET /v1/me`               | Require access JWT; return current internal user and workspace role.                                                        |
 
 ### Hierarchy, status, field, and permission rules
 
@@ -456,12 +456,12 @@ Statuses resolve from list -> folder -> space -> workspace default, stopping at 
 
 Fields accumulate from space -> folder -> list, with immutable workspace-unique keys and no child overrides/collisions. Edit inherited definitions at their owner. Support text, finite number, single-select option ID, distinct multi-select option IDs, valid `YYYY-MM-DD` date, and boolean checkbox. Validate resulting task state on create/update/move. Omitted values remain unchanged; `null` clears optional values by removing rows. Required fields accept `0` and `false`, but reject missing/empty required text/selections.
 
-| Operation | Behavior |
-| --- | --- |
-| Unknown status, wrong field type/key, invalid select option, missing required value | `400` with field paths. |
-| Move with incompatible status | Require explicit valid destination status. |
-| Move missing destination required values | Require them in move payload. |
-| Move with source-only values | Require explicit clearing; never silently discard. |
+| Operation                                                                                    | Behavior                                                         |
+| -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Unknown status, wrong field type/key, invalid select option, missing required value          | `400` with field paths.                                          |
+| Move with incompatible status                                                                | Require explicit valid destination status.                       |
+| Move missing destination required values                                                     | Require them in move payload.                                    |
+| Move with source-only values                                                                 | Require explicit clearing; never silently discard.               |
 | In-use status/field deletion, used-option removal, incompatible type/required/config changes | `409`; validate all lists whose effective configuration changes. |
 
 Alice is admin; Bob/Carol are members. Admins bypass grants after authentication and active-membership checks. For members, evaluate every ancestor: an explicit deny anywhere blocks access; a private node needs an allow at itself or an ancestor, and a descendant grant cannot bypass an inaccessible parent. Members edit tasks in accessible lists. Container/grant/status/field administration is admin-only. Assignment does not grant access. Filter the tree server-side; direct access to an existing inaccessible resource returns `403`. Moving tasks checks both lists.
@@ -496,12 +496,12 @@ Use AntD Layout/Tree/Breadcrumb, Table with built-ins and at least two custom co
 
 ## 4. Four-day execution, seed, and durable decision records
 
-| Phase | Work | Exit criterion |
-| --- | --- | --- |
+| Phase          | Work                                                                                                                                                                    | Exit criterion                                                                                   |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | Day 1, 8 hours | Knowledge hub/ADRs, Nx/Yarn and structural checks, Compose, schema/migrations, identity-consistent seeds, local/shared auth and rotation/revocation, initial hierarchy. | Real login/refresh/logout work; schema matches references and session identity constraints hold. |
-| Day 2, 8 hours | Config resolvers, backend permissions, tasks/values/moves/ordering, initial AntD navigation and views. | Core workflows validate inherited config and authorization. |
-| Day 3, 8 hours | Finish board/table/drawer, config/grant forms, sorting, feedback, curl cookbook, architecture/docs; feature freeze. | Required product surface complete. |
-| Day 4, 8 hours | Implement documented auth/domain/frontend tests, fix defects, clean Docker verification, docs and demo. | Required checks pass and submission is ready. |
+| Day 2, 8 hours | Config resolvers, backend permissions, tasks/values/moves/ordering, initial AntD navigation and views.                                                                  | Core workflows validate inherited config and authorization.                                      |
+| Day 3, 8 hours | Finish board/table/drawer, config/grant forms, sorting, feedback, curl cookbook, architecture/docs; feature freeze.                                                     | Required product surface complete.                                                               |
+| Day 4, 8 hours | Implement documented auth/domain/frontend tests, fix defects, clean Docker verification, docs and demo.                                                                 | Required checks pass and submission is ready.                                                    |
 
 During Days 1-3, use static checks, builds, and manual smoke checks. Scaffold without generated executable test cases. Keep scenario TODOs current; implement them on Day 4. Do not create empty passing suites.
 
@@ -523,13 +523,13 @@ Flowboard
 
 Carol also has an explicit deny on Delivery. The private-Delivery example above is a separate documentation/test fixture; it does not replace the default seed's grant arrangement.
 
-| Area | Seed |
-| --- | --- |
-| Identity | Three active users/memberships; credentials owned by user ID; one matching local identity per user; no seeded sessions/tokens. |
-| Statuses | Workspace/Engineering Todo, In Progress, Done; Delivery Todo, Building, Review, Done. |
+| Area               | Seed                                                                                                                            |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| Identity           | Three active users/memberships; credentials owned by user ID; one matching local identity per user; no seeded sessions/tokens.  |
+| Statuses           | Workspace/Engineering Todo, In Progress, Done; Delivery Todo, Building, Review, Done.                                           |
 | Engineering fields | Required numeric effort and single-select work type at space; multi-select tags/date at folder; Backlog text/Delivery checkbox. |
-| Product fields | Required single-select impact at space; numeric confidence at folder, ensuring two custom columns. |
-| Tasks | Six per list, varied priorities/statuses/assignees/dates; valid custom values including 0/false. |
+| Product fields     | Required single-select impact at space; numeric confidence at folder, ensuring two custom columns.                              |
+| Tasks              | Six per list, varied priorities/statuses/assignees/dates; valid custom values including 0/false.                                |
 
 Use deterministic IDs and a seed marker. Seed credentials are documented local-demo fixtures; store hashes only. Production disables demo seeding and requires provisioned secrets. Never commit actual production credentials/signing keys/tokens. Normal restart preserves edits; destructive reset is a separate documented command.
 
@@ -563,13 +563,13 @@ Extract activity/search first when workload justifies asynchronous processing: t
 
 All application tests below remain TODOs during feature development. Each records setup, operation, expected outcome, and requirements/ADR links. Implement after Day 3 freeze using Jest/Supertest with real PostgreSQL and Playwright; package tools into Docker targets and expose `make test`.
 
-| Group | Required scenarios |
-| --- | --- |
-| Schema/reference conformance | Credentials PK/FK is user_id; no credentials auth_identity_id; optional credentials for SSO-only users; session identity belongs to session user; exact reference session/token columns; same-session parent FK; unique successor; schema count 16. |
-| Authentication | Valid/invalid login and identifier normalization; hash-only persistence; missing local identity fails closed; matching local identity recorded in session; JWT signature/algorithm/issuer/audience/expiry and sid/sub checks; active membership; cookie/origin/throttle behavior; no mock-header auth. |
-| Rotation, revocation, and extension | Successful rotation; token/session expiry; concurrent same-token use; replay commits session revocation; old access JWT rejected after logout; logout-all; token family without token-level revoked_at; ambiguous refresh failures; cross-tab serialization/identity changes; SSO test double resolves same user and calls the same session/token service without credentials access. |
-| Domain | Valid hierarchy/same-workspace FKs; archive/order; Alice/Bob/Carol visibility; denied URL/private-parent/ancestor-deny rules; admin-only config; every status fallback and sibling differences; minimum categories/in-use changes; all six field types/options/required/0/false/clearing/collision/config safety; task title/CRUD/assignees/dates/moves/rollback/version/order/config races/pagination/sorting. |
-| UI and delivery | Login -> select list -> expected columns -> open task -> edit custom field -> save; refresh/reload/logout; login as Bob hides private data; cache/in-flight cleanup; drag error; two custom columns; config forms; Docker-only clean startup/restart/seed idempotency; curl/OpenAPI agreement. |
+| Group                               | Required scenarios                                                                                                                                                                                                                                                                                                                                                                                              |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Schema/reference conformance        | Credentials PK/FK is user_id; no credentials auth_identity_id; optional credentials for SSO-only users; session identity belongs to session user; exact reference session/token columns; same-session parent FK; unique successor; schema count 16.                                                                                                                                                             |
+| Authentication                      | Valid/invalid login and identifier normalization; hash-only persistence; missing local identity fails closed; matching local identity recorded in session; JWT signature/algorithm/issuer/audience/expiry and sid/sub checks; active membership; cookie/origin/throttle behavior; no mock-header auth.                                                                                                          |
+| Rotation, revocation, and extension | Successful rotation; token/session expiry; concurrent same-token use; replay commits session revocation; old access JWT rejected after logout; logout-all; token family without token-level revoked_at; ambiguous refresh failures; cross-tab serialization/identity changes; SSO test double resolves same user and calls the same session/token service without credentials access.                           |
+| Domain                              | Valid hierarchy/same-workspace FKs; archive/order; Alice/Bob/Carol visibility; denied URL/private-parent/ancestor-deny rules; admin-only config; every status fallback and sibling differences; minimum categories/in-use changes; all six field types/options/required/0/false/clearing/collision/config safety; task title/CRUD/assignees/dates/moves/rollback/version/order/config races/pagination/sorting. |
+| UI and delivery                     | Login -> select list -> expected columns -> open task -> edit custom field -> save; refresh/reload/logout; login as Bob hides private data; cache/in-flight cleanup; drag error; two custom columns; config forms; Docker-only clean startup/restart/seed idempotency; curl/OpenAPI agreement.                                                                                                                  |
 
 Final acceptance:
 

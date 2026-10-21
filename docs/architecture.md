@@ -37,25 +37,35 @@ Browser inputs are untrusted, including user IDs, role-like fields, status keys,
 
 Every repository is owned by one module. Having a shared database does not authorize a module to query a sibling's tables. Workflows call public module methods and share a transaction context when an operation must be atomic. Foreign keys may cross ownership boundaries; repository access may not.
 
-| Owner | Tables |
-| --- | --- |
-| Identity | USERS, AUTH_IDENTITIES, USER_CREDENTIALS, WORKSPACE_MEMBERSHIPS, AUTH_SESSIONS, REFRESH_TOKENS |
-| Hierarchy | WORKSPACES, CONTAINERS |
-| Permissions | CONTAINER_GRANTS |
-| Statuses | STATUS_SETS, STATUSES |
-| Custom fields | CUSTOM_FIELD_DEFINITIONS, CUSTOM_FIELD_OPTIONS |
-| Tasks | TASKS, TASK_ASSIGNEES, TASK_FIELD_VALUES |
+| Owner         | Tables                                                                                         |
+| ------------- | ---------------------------------------------------------------------------------------------- |
+| Identity      | USERS, AUTH_IDENTITIES, USER_CREDENTIALS, WORKSPACE_MEMBERSHIPS, AUTH_SESSIONS, REFRESH_TOKENS |
+| Hierarchy     | WORKSPACES, CONTAINERS                                                                         |
+| Permissions   | CONTAINER_GRANTS                                                                               |
+| Statuses      | STATUS_SETS, STATUSES                                                                          |
+| Custom fields | CUSTOM_FIELD_DEFINITIONS, CUSTOM_FIELD_OPTIONS                                                 |
+| Tasks         | TASKS, TASK_ASSIGNEES, TASK_FIELD_VALUES                                                       |
 
 ## 3. Allowed dependencies
 
 The following graph is the planned import policy, not a diagram of database joins. `contracts` is framework-neutral; `persistence` exposes infrastructure, not sibling repositories.
 
 <!-- dependency-policy:start -->
+
 ```json
 {
   "web": ["contracts"],
   "api": ["identity", "workflows", "persistence", "contracts"],
-  "workflows": ["identity", "hierarchy", "permissions", "statuses", "custom-fields", "tasks", "persistence", "contracts"],
+  "workflows": [
+    "identity",
+    "hierarchy",
+    "permissions",
+    "statuses",
+    "custom-fields",
+    "tasks",
+    "persistence",
+    "contracts"
+  ],
   "identity": ["persistence", "contracts"],
   "hierarchy": ["persistence", "contracts"],
   "permissions": ["hierarchy", "persistence", "contracts"],
@@ -66,6 +76,7 @@ The following graph is the planned import policy, not a diagram of database join
   "contracts": []
 }
 ```
+
 <!-- dependency-policy:end -->
 
 The API root wires infrastructure and controllers. Domain controllers delegate to application workflows. Identity owns its own authentication endpoints. A task/config write must not bypass a workflow by invoking a repository directly. Workflows use identity to refresh an Actor inside a write transaction; identity never imports workflows.
@@ -74,12 +85,12 @@ Frontend features may depend on contracts and their own UI helpers. They cannot 
 
 ## 4. Boundaries during common actions
 
-| Action | Route through the system |
-| --- | --- |
-| Login | Web -> identity verifier -> shared session/token service -> response |
-| Load a board | HTTP auth -> workflows -> hierarchy/permissions -> status/field resolvers -> task query |
-| Drag a card | HTTP auth -> workspace transaction -> fresh membership/access/config -> task placement write |
-| Move between lists | Same transaction checks source/destination, destination status/fields, then task/values/order writes |
+| Action             | Route through the system                                                                                        |
+| ------------------ | --------------------------------------------------------------------------------------------------------------- |
+| Login              | Web -> identity verifier -> shared session/token service -> response                                            |
+| Load a board       | HTTP auth -> workflows -> hierarchy/permissions -> status/field resolvers -> task query                         |
+| Drag a card        | HTTP auth -> workspace transaction -> fresh membership/access/config -> task placement write                    |
+| Move between lists | Same transaction checks source/destination, destination status/fields, then task/values/order writes            |
 | Edit configuration | Admin workflow builds a candidate, checks affected lists/tasks through public services, then commits or rejects |
 
 The [workflows guide](modules/workflows.md) provides sequence diagrams and rollback paths. The [identity guide](modules/identity.md) shows the local/SSO convergence and session family behavior.

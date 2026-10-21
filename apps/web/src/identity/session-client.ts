@@ -9,7 +9,7 @@ async function api<T>(path: string, init: RequestInit = {}, accessToken?: string
   if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`);
   const response = await fetch(path, { ...init, headers, credentials: 'include' });
   if (!response.ok) {
-    const payload = await response.json().catch(() => ({})) as Partial<ApiError>;
+    const payload = (await response.json().catch(() => ({}))) as Partial<ApiError>;
     throw new Error(payload.message ?? 'Something went wrong. Please try again.');
   }
   if (response.status === 204) return undefined as T;
@@ -17,7 +17,10 @@ async function api<T>(path: string, init: RequestInit = {}, accessToken?: string
 }
 
 export function login(loginIdentifier: string, password: string) {
-  return api<AccessTokenResponse>('/v1/auth/login', { method: 'POST', body: JSON.stringify({ loginIdentifier, password }) });
+  return api<AccessTokenResponse>('/v1/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ loginIdentifier, password }),
+  });
 }
 
 export function refresh() {
@@ -29,10 +32,19 @@ export function getCurrentActor(accessToken: string) {
 }
 
 export async function logout(accessToken: string) {
-  try { await api<void>('/v1/auth/logout', { method: 'POST' }, accessToken); } catch { /* Local state still must be cleared. */ }
+  try {
+    await api<void>('/v1/auth/logout', { method: 'POST' }, accessToken);
+  } catch {
+    /* Local state still must be cleared. */
+  }
 }
 
-export type Container = { id: string; name: string; type: 'space' | 'folder' | 'list'; parentContainerId: string | null };
+export type Container = {
+  id: string;
+  name: string;
+  type: 'space' | 'folder' | 'list';
+  parentContainerId: string | null;
+};
 
 export function getTree(accessToken: string) {
   return api<{ workspaceId: string; items: Container[] }>('/v1/tree', {}, accessToken);

@@ -18,11 +18,11 @@ Small-scale serialization is easy to explain and prevents validation/write races
 
 ## Alternatives and consequences
 
-| Alternative | Reason not chosen |
-| --- | --- |
-| Fine-grained locking immediately | More lock-order cases than this small workload needs. |
-| Queue/cache/worker in the MVP | Adds operational work without a required feature. |
-| Automatic retries for every mutation | Can duplicate effects or mask refresh consumption. |
+| Alternative                          | Reason not chosen                                     |
+| ------------------------------------ | ----------------------------------------------------- |
+| Fine-grained locking immediately     | More lock-order cases than this small workload needs. |
+| Queue/cache/worker in the MVP        | Adds operational work without a required feature.     |
+| Automatic retries for every mutation | Can duplicate effects or mask refresh consumption.    |
 
 Workspace write locking is a throughput limit. Per-instance login throttling is not global enforcement across replicas. Future activity/search can use transactional outbox plus idempotent consumers, retries, dead letters, and eventual consistency. That future design is not a shipped feature.
 

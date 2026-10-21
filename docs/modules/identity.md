@@ -12,18 +12,19 @@ This module owns users, membership, sign-in proofs, and login lifetime. It does 
 
 ## 2. Ownership, data, and decisions
 
-| Table | Everyday meaning |
-| --- | --- |
-| USERS | The stable person inside Flowboard. |
-| AUTH_IDENTITIES | Ways that person can prove identity: local now, a provider later. |
-| USER_CREDENTIALS | Optional local username and password hash owned by that person. |
+| Table                 | Everyday meaning                                                     |
+| --------------------- | -------------------------------------------------------------------- |
+| USERS                 | The stable person inside Flowboard.                                  |
+| AUTH_IDENTITIES       | Ways that person can prove identity: local now, a provider later.    |
+| USER_CREDENTIALS      | Optional local username and password hash owned by that person.      |
 | WORKSPACE_MEMBERSHIPS | The person's active membership and admin/member role in a workspace. |
-| AUTH_SESSIONS | One login, its authenticating identity, deadline, and revocation. |
-| REFRESH_TOKENS | Secret hashes and predecessor history used to renew that login. |
+| AUTH_SESSIONS         | One login, its authenticating identity, deadline, and revocation.    |
+| REFRESH_TOKENS        | Secret hashes and predecessor history used to renew that login.      |
 
 The following block is this module's owned schema. WORKSPACES is an external reference owned by hierarchy.
 
 <!-- schema:start -->
+
 ```mermaid
 erDiagram
     USERS ||--o{ AUTH_IDENTITIES : has_login_identities
@@ -78,40 +79,41 @@ erDiagram
         datetime consumed_at "Nullable until rotated"
     }
 ```
+
 <!-- schema:end -->
 
-| Decision | Rule and reason |
-| --- | --- |
-| User-owned credentials | USER_CREDENTIALS.user_id is PK/FK. No auth_identity_id column. A person may have no local password. |
-| User audit timestamps | USERS.created_at records provisioning; USERS.updated_at records the latest user-record change. They are not an event/audit-log substitute. |
-| Stable identity links | Unique issuer/subject; never auto-link by email. Local issuer is `urn:flowboard:local`, subject is internal user UUID, with one local identity per user. |
-| Consistent sessions | Both session user_id and auth_identity_id are required. A composite FK ensures the identity belongs to that same user. |
-| One revocation source | AUTH_SESSIONS.revoked_at invalidates its access tokens and entire refresh family. No REFRESH_TOKENS.revoked_at or session revocation-reason column. |
-| One rotation chain | Parent and child tokens belong to the same session; a non-null parent has at most one child; parent link is immutable. |
+| Decision               | Rule and reason                                                                                                                                          |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| User-owned credentials | USER_CREDENTIALS.user_id is PK/FK. No auth_identity_id column. A person may have no local password.                                                      |
+| User audit timestamps  | USERS.created_at records provisioning; USERS.updated_at records the latest user-record change. They are not an event/audit-log substitute.               |
+| Stable identity links  | Unique issuer/subject; never auto-link by email. Local issuer is `urn:flowboard:local`, subject is internal user UUID, with one local identity per user. |
+| Consistent sessions    | Both session user_id and auth_identity_id are required. A composite FK ensures the identity belongs to that same user.                                   |
+| One revocation source  | AUTH_SESSIONS.revoked_at invalidates its access tokens and entire refresh family. No REFRESH_TOKENS.revoked_at or session revocation-reason column.      |
+| One rotation chain     | Parent and child tokens belong to the same session; a non-null parent has at most one child; parent link is immutable.                                   |
 
 These are protected reference decisions, not optional implementation suggestions. Original images: [identity ER](../references/auth-identity-er.png), [token history](../references/session-token-er.png), [shared sign-in](../references/shared-sign-in-flow.png).
 
-| Lifetime or storage | Default |
-| --- | --- |
-| Session | Absolute 7 days from login; refreshing never extends it. |
-| Access JWT | Maximum 10 minutes, capped by remaining session lifetime. Claims sub/sid/iss/aud/iat/exp/jti; no authoritative role/grant claims. |
-| Signing | Established JWT library, HS256 only, pinned issuer/audience, at least 256-bit generated secret. |
-| Password | Argon2id library; at least 19 MiB, 2 iterations, parallelism 1; encoded hashes support later rehashing. |
-| Refresh secret | At least 256 random bits; store SHA-256 hash only; expiry cannot exceed session deadline. |
-| Browser | Access token in memory; host-only HttpOnly refresh cookie, SameSite=Strict, path `/v1/auth`. |
-| Transport | HTTPS/Secure cookie in production; explicit local-demo mode supports Compose HTTP. |
+| Lifetime or storage | Default                                                                                                                           |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Session             | Absolute 7 days from login; refreshing never extends it.                                                                          |
+| Access JWT          | Maximum 10 minutes, capped by remaining session lifetime. Claims sub/sid/iss/aud/iat/exp/jti; no authoritative role/grant claims. |
+| Signing             | Established JWT library, HS256 only, pinned issuer/audience, at least 256-bit generated secret.                                   |
+| Password            | Argon2id library; at least 19 MiB, 2 iterations, parallelism 1; encoded hashes support later rehashing.                           |
+| Refresh secret      | At least 256 random bits; store SHA-256 hash only; expiry cannot exceed session deadline.                                         |
+| Browser             | Access token in memory; host-only HttpOnly refresh cookie, SameSite=Strict, path `/v1/auth`.                                      |
+| Transport           | HTTPS/Secure cookie in production; explicit local-demo mode supports Compose HTTP.                                                |
 
 No raw password/token/cookie/Authorization header is logged. No tokens persist in localStorage. No access-token table is needed. See [OWASP password guidance](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html) and [RFC 9700](https://www.rfc-editor.org/rfc/rfc9700.html).
 
 ## 3. Connections and interfaces
 
-| Connection | What crosses the boundary |
-| --- | --- |
-| API/web | Credentials at login; Flowboard access JWTs for requests; refresh cookie only for auth routes. |
-| Workflows | Trusted Actor; ability to reload active membership inside a domain transaction; active assignee lookup. |
-| Hierarchy | Workspace IDs referenced by membership; no reading hierarchy repositories. |
-| Persistence | Owned repositories, transaction context, locks for session/refresh rows. |
-| Future SSO verifier | Verified user/identity pair into the same session service. No provider tokens reach domain modules. |
+| Connection          | What crosses the boundary                                                                               |
+| ------------------- | ------------------------------------------------------------------------------------------------------- |
+| API/web             | Credentials at login; Flowboard access JWTs for requests; refresh cookie only for auth routes.          |
+| Workflows           | Trusted Actor; ability to reload active membership inside a domain transaction; active assignee lookup. |
+| Hierarchy           | Workspace IDs referenced by membership; no reading hierarchy repositories.                              |
+| Persistence         | Owned repositories, transaction context, locks for session/refresh rows.                                |
+| Future SSO verifier | Verified user/identity pair into the same session service. No provider tokens reach domain modules.     |
 
 ```ts
 type VerifiedSignIn = { userId: string; authIdentityId: string };
@@ -122,13 +124,13 @@ type Actor = {
 };
 ```
 
-| Public capability | Input -> output |
-| --- | --- |
-| Verify local sign-in | Normalized identifier + password -> VerifiedSignIn; no session yet. |
+| Public capability          | Input -> output                                                                                             |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Verify local sign-in       | Normalized identifier + password -> VerifiedSignIn; no session yet.                                         |
 | Create application session | VerifiedSignIn + active workspace context -> session + access token + raw refresh secret for response only. |
-| Authenticate access | Bearer JWT -> validated session and current Actor. |
-| Refresh or revoke | Refresh-cookie secret -> rotated result or committed session revocation. |
-| Membership/user queries | User/workspace IDs + optional transaction -> active Actor or eligible assignees. |
+| Authenticate access        | Bearer JWT -> validated session and current Actor.                                                          |
+| Refresh or revoke          | Refresh-cookie secret -> rotated result or committed session revocation.                                    |
+| Membership/user queries    | User/workspace IDs + optional transaction -> active Actor or eligible assignees.                            |
 
 HTTP endpoints are defined in [API/contracts](api-contracts.md). Only identity handles login, refresh, logout, logout-all, me, and member-user projections. Never expose password hashes, identity-provider secrets, token hashes, or refresh history in user responses.
 
@@ -261,23 +263,23 @@ Revocation blocks subsequent requests; a request already authorized before revoc
 
 Build during Day 1: owned schema/constraints, seeded credentials/local identities, local verifier, shared session/token service, access guard, refresh/replay, logout, then frontend login integration. Day 4 implements the cases below.
 
-| ID | Test TODO: setup/action -> expected result |
-| --- | --- |
-| AUTH-01 | Valid local login -> one matching user/identity session, token hash only, current Actor. |
-| AUTH-02 | Unknown identifier or wrong password -> generic 401; login limiter can return 429 without secrets in logs. |
-| AUTH-03 | Missing local identity -> configuration failure, no session or token insertion. |
-| AUTH-04 | SSO-only user with no credentials and a verified test double -> same session/token service; no password lookup. |
-| AUTH-05 | Session references another user's identity -> database rejection. |
-| AUTH-06 | Invalid signature/algorithm/issuer/audience/expiry or mismatched sid/sub -> 401. |
-| AUTH-07 | Inactive user/membership -> 403; database failure -> 503 with no fallback. |
-| AUTH-08 | Valid refresh -> old token consumed, one same-session successor, unchanged absolute deadline. |
-| AUTH-09 | Consumed token replay -> session revocation commits, old/new refresh and access tokens become unusable. |
-| AUTH-10 | Concurrent reuse -> only one successor; strict replay revokes the family; no branching or rollback of revocation. |
-| AUTH-11 | Logout/logout-all -> correct session scope revoked; ordinary logout preserves other sessions. |
-| AUTH-12 | Refresh network response lost -> no automatic blind retry; clear/reauthenticate if outcome is ambiguous. |
+| ID      | Test TODO: setup/action -> expected result                                                                          |
+| ------- | ------------------------------------------------------------------------------------------------------------------- |
+| AUTH-01 | Valid local login -> one matching user/identity session, token hash only, current Actor.                            |
+| AUTH-02 | Unknown identifier or wrong password -> generic 401; login limiter can return 429 without secrets in logs.          |
+| AUTH-03 | Missing local identity -> configuration failure, no session or token insertion.                                     |
+| AUTH-04 | SSO-only user with no credentials and a verified test double -> same session/token service; no password lookup.     |
+| AUTH-05 | Session references another user's identity -> database rejection.                                                   |
+| AUTH-06 | Invalid signature/algorithm/issuer/audience/expiry or mismatched sid/sub -> 401.                                    |
+| AUTH-07 | Inactive user/membership -> 403; database failure -> 503 with no fallback.                                          |
+| AUTH-08 | Valid refresh -> old token consumed, one same-session successor, unchanged absolute deadline.                       |
+| AUTH-09 | Consumed token replay -> session revocation commits, old/new refresh and access tokens become unusable.             |
+| AUTH-10 | Concurrent reuse -> only one successor; strict replay revokes the family; no branching or rollback of revocation.   |
+| AUTH-11 | Logout/logout-all -> correct session scope revoked; ordinary logout preserves other sessions.                       |
+| AUTH-12 | Refresh network response lost -> no automatic blind retry; clear/reauthenticate if outcome is ambiguous.            |
 | AUTH-13 | Untrusted/missing Origin on cookie-sensitive mutations -> 403; cookie attributes and local/prod modes match policy. |
-| AUTH-14 | Credential maintenance -> timestamp update and local-session revocation are atomic. |
-| AUTH-15 | Reference schema inspection -> exact auth columns; user-owned credential key; no token revoked_at. |
+| AUTH-14 | Credential maintenance -> timestamp update and local-session revocation are atomic.                                 |
+| AUTH-15 | Reference schema inspection -> exact auth columns; user-owned credential key; no token revoked_at.                  |
 
 Browser cross-tab refresh, cache clearing, and identity-change replay rules are owned by [web](web-client.md). Signing material and seed constraints are owned by [runtime](persistence-runtime.md).
 

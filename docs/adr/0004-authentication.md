@@ -20,12 +20,12 @@ Adding a sign-in method changes identity proof, not task references or business 
 
 ## Alternatives and consequences
 
-| Alternative | Reason not chosen |
-| --- | --- |
-| Credentials owned by AUTH_IDENTITIES | Contradicts the accepted user-owned credential ER. |
-| Direct provider tokens for domain APIs | Moves provider coupling into all API authentication paths. |
-| Stateless JWTs without session checks | Existing tokens cannot be revoked immediately on logout/replay. |
-| Cookie session only | Simpler, but JWT plus rotating refresh tokens was explicitly selected. |
+| Alternative                            | Reason not chosen                                                      |
+| -------------------------------------- | ---------------------------------------------------------------------- |
+| Credentials owned by AUTH_IDENTITIES   | Contradicts the accepted user-owned credential ER.                     |
+| Direct provider tokens for domain APIs | Moves provider coupling into all API authentication paths.             |
+| Stateless JWTs without session checks  | Existing tokens cannot be revoked immediately on logout/replay.        |
+| Cookie session only                    | Simpler, but JWT plus rotating refresh tokens was explicitly selected. |
 
 Strict replay handling can revoke a session after an ambiguous network failure or simultaneous token reuse. The client serializes refresh and does not blindly retry it. The extra session lookup and database history are intentional costs. Four-day delivery is tighter than with mock identity.
 

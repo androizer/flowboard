@@ -20,11 +20,11 @@ The rule can be explained before code is written. Status keys keep label/order c
 
 ## Alternatives and consequences
 
-| Alternative | Reason not chosen |
-| --- | --- |
-| Merge statuses by key with hide/override rules | More inheritance states to validate and explain. |
-| Child field overrides | Changes meaning/requirements/options for the same field down the tree. |
-| Automatic remapping or stripping | Requires migration policy/UI and may surprise users. |
+| Alternative                                    | Reason not chosen                                                      |
+| ---------------------------------------------- | ---------------------------------------------------------------------- |
+| Merge statuses by key with hide/override rules | More inheritance states to validate and explain.                       |
+| Child field overrides                          | Changes meaning/requirements/options for the same field down the tree. |
+| Automatic remapping or stripping               | Requires migration policy/UI and may surprise users.                   |
 
 Config screens must distinguish local and inherited data and explain blockers. A local copied set becomes independent. Safety checks inspect all affected retained task records, not only one list's visible page.
 

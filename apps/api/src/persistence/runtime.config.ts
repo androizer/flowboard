@@ -3,10 +3,19 @@ import fs from 'node:fs';
 
 export const config = () => {
   const file = process.env.JWT_SECRET_FILE;
-  const secret = file && fs.existsSync(file) ? fs.readFileSync(file, 'utf8').trim() : process.env.JWT_SECRET;
-  if (!secret || Buffer.from(secret).length < 32) throw new Error('JWT signing material is missing or too short.');
-  return { secret, issuer: process.env.JWT_ISSUER ?? 'flowboard-local', audience: process.env.JWT_AUDIENCE ?? 'flowboard-web', demoMode: process.env.FLOWBOARD_DEMO_MODE === 'true', webOrigin: process.env.WEB_ORIGIN ?? 'http://localhost:8080' };
+  const secret =
+    file && fs.existsSync(file) ? fs.readFileSync(file, 'utf8').trim() : process.env.JWT_SECRET;
+  if (!secret || Buffer.from(secret).length < 32)
+    throw new Error('JWT signing material is missing or too short.');
+  return {
+    secret,
+    issuer: process.env.JWT_ISSUER ?? 'flowboard-local',
+    audience: process.env.JWT_AUDIENCE ?? 'flowboard-web',
+    demoMode: process.env.FLOWBOARD_DEMO_MODE === 'true',
+    webOrigin: process.env.WEB_ORIGIN ?? 'http://localhost:8080',
+  };
 };
 
-export const hashRefresh = (value: string) => crypto.createHash('sha256').update(value).digest('hex');
+export const hashRefresh = (value: string) =>
+  crypto.createHash('sha256').update(value).digest('hex');
 export const createRefreshSecret = () => crypto.randomBytes(32).toString('base64url');

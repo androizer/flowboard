@@ -18,11 +18,11 @@ There is one clear path for each task's rules. User IDs remain stable if authent
 
 ## Alternatives and consequences
 
-| Alternative | Reason not chosen |
-| --- | --- |
-| Arbitrary nested folders or direct space-to-list | More resolver cases than the assignment's specified tree. |
-| Independent child permissions | Can expose children through private parents and complicates navigation. |
-| Roles embedded as authority in JWTs | Delays role changes until tokens expire. |
+| Alternative                                      | Reason not chosen                                                       |
+| ------------------------------------------------ | ----------------------------------------------------------------------- |
+| Arbitrary nested folders or direct space-to-list | More resolver cases than the assignment's specified tree.               |
+| Independent child permissions                    | Can expose children through private parents and complicates navigation. |
+| Roles embedded as authority in JWTs              | Delays role changes until tokens expire.                                |
 
 Config safety checks include retained archived tasks so later definition removal cannot orphan stored data. This is stricter than merely keeping today's visible board valid.
 

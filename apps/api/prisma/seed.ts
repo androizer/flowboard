@@ -7,11 +7,10 @@ import {
   Priority,
   StatusCategory,
   Visibility,
-} from "@prisma/client";
-import argon2 from "argon2";
+} from '@prisma/client';
+import argon2 from 'argon2';
 const prisma = new PrismaClient();
-const id = (n: number) =>
-  `00000000-0000-4000-8000-${n.toString().padStart(12, "0")}`;
+const id = (n: number) => `00000000-0000-4000-8000-${n.toString().padStart(12, '0')}`;
 const workspace = id(1);
 const users = { alice: id(11), bob: id(12), carol: id(13) };
 const containers = {
@@ -25,18 +24,18 @@ const containers = {
   roadmap: id(28),
 };
 async function main() {
-  if (process.env.FLOWBOARD_DEMO_MODE !== "true")
-    throw new Error("Demo seed is disabled outside local demo mode.");
+  if (process.env.FLOWBOARD_DEMO_MODE !== 'true')
+    throw new Error('Demo seed is disabled outside local demo mode.');
   await prisma.$transaction(async (tx) => {
     await tx.$executeRawUnsafe(
-      "CREATE TABLE IF NOT EXISTS seed_markers (version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())",
+      'CREATE TABLE IF NOT EXISTS seed_markers (version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())',
     );
     const applied = await tx.$queryRaw<
       Array<{ version: string }>
     >`SELECT version FROM seed_markers WHERE version = 'day-1-v1'`;
     if (applied.length) return;
-    await tx.workspace.create({ data: { id: workspace, name: "Flowboard" } });
-    const password = process.env.SEED_PASSWORD ?? "FlowboardDemo!2026";
+    await tx.workspace.create({ data: { id: workspace, name: 'Flowboard' } });
+    const password = process.env.SEED_PASSWORD ?? 'FlowboardDemo!2026';
     const passwordHash = await argon2.hash(password, {
       type: argon2.argon2id,
       memoryCost: 19456,
@@ -44,9 +43,9 @@ async function main() {
       parallelism: 1,
     });
     for (const [key, displayName] of [
-      ["alice", "Alice"],
-      ["bob", "Bob"],
-      ["carol", "Carol"],
+      ['alice', 'Alice'],
+      ['bob', 'Bob'],
+      ['carol', 'Carol'],
     ] as const) {
       const userId = users[key];
       await tx.user.create({
@@ -56,7 +55,7 @@ async function main() {
           identities: {
             create: {
               id: id(100 + Object.keys(users).indexOf(key)),
-              issuer: "urn:flowboard:local",
+              issuer: 'urn:flowboard:local',
               subject: userId,
             },
           },
@@ -66,8 +65,7 @@ async function main() {
           memberships: {
             create: {
               workspaceId: workspace,
-              role:
-                key === "alice" ? MembershipRole.admin : MembershipRole.member,
+              role: key === 'alice' ? MembershipRole.admin : MembershipRole.member,
             },
           },
         },
@@ -92,62 +90,31 @@ async function main() {
           visibility,
         },
       });
+    await createContainer('engineering', ContainerType.space, 'Engineering', null, 1);
+    await createContainer('q2', ContainerType.folder, 'Q2 Launch', containers.engineering, 1);
+    await createContainer('backlog', ContainerType.list, 'Backlog', containers.q2, 1);
+    await createContainer('delivery', ContainerType.list, 'Delivery', containers.q2, 2);
     await createContainer(
-      "engineering",
-      ContainerType.space,
-      "Engineering",
-      null,
-      1,
-    );
-    await createContainer(
-      "q2",
-      ContainerType.folder,
-      "Q2 Launch",
-      containers.engineering,
-      1,
-    );
-    await createContainer(
-      "backlog",
+      'security',
       ContainerType.list,
-      "Backlog",
-      containers.q2,
-      1,
-    );
-    await createContainer(
-      "delivery",
-      ContainerType.list,
-      "Delivery",
-      containers.q2,
-      2,
-    );
-    await createContainer(
-      "security",
-      ContainerType.list,
-      "Security",
+      'Security',
       containers.q2,
       3,
       Visibility.private,
     );
+    await createContainer('product', ContainerType.space, 'Product', null, 2, Visibility.private);
     await createContainer(
-      "product",
-      ContainerType.space,
-      "Product",
-      null,
-      2,
-      Visibility.private,
-    );
-    await createContainer(
-      "strategy",
+      'strategy',
       ContainerType.folder,
-      "Strategy",
+      'Strategy',
       containers.product,
       1,
       Visibility.private,
     );
     await createContainer(
-      "roadmap",
+      'roadmap',
       ContainerType.list,
-      "Roadmap",
+      'Roadmap',
       containers.strategy,
       1,
       Visibility.private,
@@ -194,10 +161,7 @@ async function main() {
         ownerContainerId: containers.delivery,
       },
     });
-    const statuses = async (
-      set: string,
-      names: Array<[string, string, StatusCategory]>,
-    ) =>
+    const statuses = async (set: string, names: Array<[string, string, StatusCategory]>) =>
       tx.status.createMany({
         data: names.map(([key, name, category], index) => ({
           id: id(60 + Number(set.slice(-1)) * 10 + index),
@@ -205,25 +169,25 @@ async function main() {
           key,
           name,
           category,
-          color: "#1677ff",
+          color: '#1677ff',
           position: index + 1,
         })),
       });
     await statuses(defaultSet.id, [
-      ["todo", "Todo", StatusCategory.not_started],
-      ["in_progress", "In Progress", StatusCategory.active],
-      ["done", "Done", StatusCategory.done],
+      ['todo', 'Todo', StatusCategory.not_started],
+      ['in_progress', 'In Progress', StatusCategory.active],
+      ['done', 'Done', StatusCategory.done],
     ]);
     await statuses(engineeringSet.id, [
-      ["todo", "Todo", StatusCategory.not_started],
-      ["in_progress", "In Progress", StatusCategory.active],
-      ["done", "Done", StatusCategory.done],
+      ['todo', 'Todo', StatusCategory.not_started],
+      ['in_progress', 'In Progress', StatusCategory.active],
+      ['done', 'Done', StatusCategory.done],
     ]);
     await statuses(deliverySet.id, [
-      ["todo", "Todo", StatusCategory.not_started],
-      ["building", "Building", StatusCategory.active],
-      ["review", "Review", StatusCategory.active],
-      ["done", "Done", StatusCategory.done],
+      ['todo', 'Todo', StatusCategory.not_started],
+      ['building', 'Building', StatusCategory.active],
+      ['review', 'Review', StatusCategory.active],
+      ['done', 'Done', StatusCategory.done],
     ]);
     const field = async (
       n: number,
@@ -248,97 +212,79 @@ async function main() {
     const effort = await field(
       1,
       containers.engineering,
-      "effort",
-      "Effort",
+      'effort',
+      'Effort',
       FieldType.number,
       true,
     );
     const workType = await field(
       2,
       containers.engineering,
-      "work_type",
-      "Work type",
+      'work_type',
+      'Work type',
       FieldType.single_select,
       true,
     );
-    const tags = await field(
-      3,
-      containers.q2,
-      "tags",
-      "Tags",
-      FieldType.multi_select,
-    );
-    const targetDate = await field(
-      4,
-      containers.q2,
-      "target_date",
-      "Target date",
-      FieldType.date,
-    );
+    const tags = await field(3, containers.q2, 'tags', 'Tags', FieldType.multi_select);
+    const targetDate = await field(4, containers.q2, 'target_date', 'Target date', FieldType.date);
     const customerNote = await field(
       5,
       containers.backlog,
-      "customer_note",
-      "Customer note",
+      'customer_note',
+      'Customer note',
       FieldType.text,
     );
     const verified = await field(
       6,
       containers.delivery,
-      "verified",
-      "Verified",
+      'verified',
+      'Verified',
       FieldType.checkbox,
     );
     const impact = await field(
       7,
       containers.product,
-      "impact",
-      "Impact",
+      'impact',
+      'Impact',
       FieldType.single_select,
       true,
     );
-    await field(
-      8,
-      containers.strategy,
-      "confidence",
-      "Confidence",
-      FieldType.number,
-    );
+    await field(8, containers.strategy, 'confidence', 'Confidence', FieldType.number);
     await tx.customFieldOption.createMany({
       data: [
         {
           id: id(301),
           fieldDefinitionId: workType.id,
-          label: "Bug",
-          color: "#ff4d4f",
+          label: 'Bug',
+          color: '#ff4d4f',
           position: 1,
         },
         {
           id: id(302),
           fieldDefinitionId: workType.id,
-          label: "Feature",
-          color: "#1677ff",
+          label: 'Feature',
+          color: '#1677ff',
           position: 2,
         },
         {
           id: id(303),
           fieldDefinitionId: tags.id,
-          label: "Customer reported",
-          color: "#722ed1",
+          label: 'Customer reported',
+          color: '#722ed1',
           position: 1,
         },
         {
           id: id(304),
           fieldDefinitionId: tags.id,
-          label: "Urgent",
-          color: "#fa8c16",
+          label: 'Urgent',
+          color: '#fa8c16',
           position: 2,
         },
         {
           id: id(305),
           fieldDefinitionId: impact.id,
-          label: "High",
-          color: "#ff4d4f",
+          label: 'High',
+          color: '#ff4d4f',
           position: 1,
         },
       ],
@@ -353,8 +299,8 @@ async function main() {
       const list = taskLists[Math.floor(index / 6)];
       const statusKey =
         list === containers.delivery
-          ? ["todo", "building", "review", "done"][index % 4]
-          : ["todo", "in_progress", "done"][index % 3];
+          ? ['todo', 'building', 'review', 'done'][index % 4]
+          : ['todo', 'in_progress', 'done'][index % 3];
       const task = await tx.task.create({
         data: {
           id: id(400 + index),
@@ -363,13 +309,9 @@ async function main() {
           createdByUserId: index % 2 ? users.bob : users.alice,
           title: `Seed task ${index + 1}`,
           statusKey,
-          priority: [
-            Priority.urgent,
-            Priority.high,
-            Priority.normal,
-            Priority.low,
-            Priority.none,
-          ][index % 5],
+          priority: [Priority.urgent, Priority.high, Priority.normal, Priority.low, Priority.none][
+            index % 5
+          ],
           position: (index % 6) + 1,
           dueDate: index % 2 ? new Date(Date.UTC(2026, 9, index + 1)) : null,
         },
@@ -410,7 +352,7 @@ async function main() {
               taskId: task.id,
               fieldDefinitionId: targetDate.id,
               workspaceId: workspace,
-              value: `2026-10-${String((index % 20) + 1).padStart(2, "0")}`,
+              value: `2026-10-${String((index % 20) + 1).padStart(2, '0')}`,
             },
           ],
         });
@@ -442,9 +384,7 @@ async function main() {
           },
         });
     }
-    await tx.$executeRawUnsafe(
-      "INSERT INTO seed_markers (version) VALUES ('day-1-v1')",
-    );
+    await tx.$executeRawUnsafe("INSERT INTO seed_markers (version) VALUES ('day-1-v1')");
   });
 }
 main().finally(() => prisma.$disconnect());

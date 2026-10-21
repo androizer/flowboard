@@ -1,7 +1,18 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
-  "namedInputs": { "default": ["{projectRoot}/**/*", "sharedGlobals"] },
+  "namedInputs": {
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "sharedGlobals": []
+  },
   "targetDefaults": { "build": { "inputs": ["default", "^default"] } },
-  "plugins": [],
+  "plugins": [
+    {
+      "plugin": "@nx/eslint/plugin",
+      "options": {
+        "targetName": "lint",
+        "extensions": ["ts", "tsx", "js", "jsx"]
+      }
+    }
+  ],
   "workspaceLayout": { "appsDir": "apps", "libsDir": "libs" }
 }

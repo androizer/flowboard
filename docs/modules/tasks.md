@@ -13,6 +13,7 @@ Task T1 belongs to Backlog, has status_key=in_progress, priority=high, assignee 
 Tasks owns stored custom answers and assignment links, while field definitions and workspace membership belong elsewhere.
 
 <!-- schema:start -->
+
 ```mermaid
 erDiagram
     WORKSPACES ||--o{ TASKS : scopes
@@ -51,20 +52,21 @@ erDiagram
         jsonb value
     }
 ```
+
 <!-- schema:end -->
 
-| Field or relation | Rule |
-| --- | --- |
-| title | Required after trimming, 1-500 characters. |
-| description | Optional plain text/markdown text; render safely, without executing HTML. |
-| primary_list_id | Required, exactly one list in the same workspace. No task folder/space/workspace direct placement. |
-| status_key | Required on create; valid in effective list set. Stable key, not a direct definition-row FK. |
-| priority | urgent, high, normal, low, none; default none when omitted. |
-| assignees | Zero or more distinct active workspace members; assignment does not grant access. |
-| due_date | Optional valid ISO datetime; null clears. |
-| position | Server-owned dense order inside one `(list, status_key)` group. |
-| version | Starts at 1; every task mutation increments it; writes require expectedVersion. |
-| custom values | One row per task/definition; missing optional row means no answer; null patches remove rows. |
+| Field or relation | Rule                                                                                               |
+| ----------------- | -------------------------------------------------------------------------------------------------- |
+| title             | Required after trimming, 1-500 characters.                                                         |
+| description       | Optional plain text/markdown text; render safely, without executing HTML.                          |
+| primary_list_id   | Required, exactly one list in the same workspace. No task folder/space/workspace direct placement. |
+| status_key        | Required on create; valid in effective list set. Stable key, not a direct definition-row FK.       |
+| priority          | urgent, high, normal, low, none; default none when omitted.                                        |
+| assignees         | Zero or more distinct active workspace members; assignment does not grant access.                  |
+| due_date          | Optional valid ISO datetime; null clears.                                                          |
+| position          | Server-owned dense order inside one `(list, status_key)` group.                                    |
+| version           | Starts at 1; every task mutation increments it; writes require expectedVersion.                    |
+| custom values     | One row per task/definition; missing optional row means no answer; null patches remove rows.       |
 
 Workspace-scoped composite FKs protect list, task, assignment membership, and definition scope. Unique task/user and task/definition pairs prevent duplicate links/answers. Creator is a stable internal user ID, never a provider subject.
 
@@ -72,13 +74,13 @@ Tasks archive rather than physically delete. Parent-container archival also hide
 
 ## 3. Connections and interfaces
 
-| Caller | Capability |
-| --- | --- |
-| Workflows | Read stored task/list/version, create/update/archive, placement/move writes, assignee/value replacement within a transaction. |
-| Config safety workflow | Query all retained status/field/option usage in supplied list scopes, without filtering out archived tasks. |
-| Board/list workflow | Paginated task projections and built-in sort; include assignees/value data in bounded queries. |
-| Identity via workflows | Supply validated eligible assignee IDs. |
-| Status/field validation via workflows | Supply validated destination key and definition-ID values; task service does not read config tables. |
+| Caller                                | Capability                                                                                                                    |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Workflows                             | Read stored task/list/version, create/update/archive, placement/move writes, assignee/value replacement within a transaction. |
+| Config safety workflow                | Query all retained status/field/option usage in supplied list scopes, without filtering out archived tasks.                   |
+| Board/list workflow                   | Paginated task projections and built-in sort; include assignees/value data in bounded queries.                                |
+| Identity via workflows                | Supply validated eligible assignee IDs.                                                                                       |
+| Status/field validation via workflows | Supply validated destination key and definition-ID values; task service does not read config tables.                          |
 
 Task writes are internal application capabilities for workflows, not a permission-free public HTTP API. Keep task controllers behind workflows. Task service imports neither permissions nor status/field services, preventing circular ownership.
 
@@ -151,17 +153,17 @@ Archive checks current version/access and marks the task archived, removes it fr
 
 Build the task repository/use cases and form/query integration in Day 2. Finish move/placement UX and sorting in Day 3. Built-in list sorting is due date or priority, with stable ID tie-breaking. Default board order is configured status order then task position/ID; null due dates sort last, and priority order is urgent -> high -> normal -> low -> none.
 
-| ID | Test TODO: setup/action -> expected result |
-| --- | --- |
-| TASK-01 | Valid create -> one task/list, version 1, valid assignments/values. |
-| TASK-02 | Blank/over-500 title, invalid enum/date, inactive/foreign assignee -> 400. |
-| TASK-03 | Attempt direct folder/space task placement -> reject. |
-| TASK-04 | Update omits value vs explicit null -> preserve vs clear per field validation. |
-| TASK-05 | Stale expectedVersion -> 409, no partial task/answer writes. |
-| TASK-06 | Status change/reorder -> correct column and persisted dense placement; no list change. |
-| TASK-07 | Foreign/mismatched/self anchor -> reject; empty-column append works. |
-| TASK-08 | Archive -> hidden normally, retained references still found by config checks. |
+| ID      | Test TODO: setup/action -> expected result                                               |
+| ------- | ---------------------------------------------------------------------------------------- |
+| TASK-01 | Valid create -> one task/list, version 1, valid assignments/values.                      |
+| TASK-02 | Blank/over-500 title, invalid enum/date, inactive/foreign assignee -> 400.               |
+| TASK-03 | Attempt direct folder/space task placement -> reject.                                    |
+| TASK-04 | Update omits value vs explicit null -> preserve vs clear per field validation.           |
+| TASK-05 | Stale expectedVersion -> 409, no partial task/answer writes.                             |
+| TASK-06 | Status change/reorder -> correct column and persisted dense placement; no list change.   |
+| TASK-07 | Foreign/mismatched/self anchor -> reject; empty-column append works.                     |
+| TASK-08 | Archive -> hidden normally, retained references still found by config checks.            |
 | TASK-09 | Paginated/sorted results -> stable ties, null due dates last, documented priority order. |
-| TASK-10 | Internal member/provider migration -> task IDs/assignees/creator remain stable. |
+| TASK-10 | Internal member/provider migration -> task IDs/assignees/creator remain stable.          |
 
 For changes, update task contracts and [workflows](workflows.md) first if authorization/config/atomicity is affected. New task fields need persistence, drawer/table projections, examples, and TODOs together. Do not add a task-to-global-status FK that bypasses scoped resolution.

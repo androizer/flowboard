@@ -32,10 +32,10 @@ Update the workflow and sequence diagrams when the order of validation, locking,
 
 ## 5. Review questions
 
-| Question | Example of an accidental regression |
-| --- | --- |
-| Did ownership change? | Credentials suddenly reference an auth identity instead of the user. |
-| Did a caller bypass a workflow? | A config controller deletes a status without checking tasks. |
-| Did commit/failure order change? | Refresh replay throws before committing session revocation. |
-| Did inherited scope change? | List-only fields silently become workspace-wide. |
+| Question                                      | Example of an accidental regression                                   |
+| --------------------------------------------- | --------------------------------------------------------------------- |
+| Did ownership change?                         | Credentials suddenly reference an auth identity instead of the user.  |
+| Did a caller bypass a workflow?               | A config controller deletes a status without checking tasks.          |
+| Did commit/failure order change?              | Refresh replay throws before committing session revocation.           |
+| Did inherited scope change?                   | List-only fields silently become workspace-wide.                      |
 | Did a future design become a claimed feature? | Documentation says SSO works although only the local verifier exists. |
