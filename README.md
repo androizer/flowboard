@@ -1,6 +1,6 @@
 # Flowboard
 
-Flowboard has a Dockerized Day 1 foundation and working Day 2 Work overview and permission-filtered list/task views. React/Ant Design calls the same NestJS `/v1` API that a curl client can use. PostgreSQL/Prisma provides the schema and idempotent demo seed; local passwords use Flowboard sessions and rotating refresh tokens.
+Flowboard has a Dockerized modular monolith with Work overview, permission-filtered task views, and Day 3 administration routes and UI. React/Ant Design calls the NestJS `/v1` API; a second-channel curl proof is documented for later work. PostgreSQL/Prisma provides the schema and idempotent demo seed; local passwords use Flowboard sessions and rotating refresh tokens.
 
 ## Run locally with Docker
 
@@ -30,7 +30,7 @@ The data model has one workspace and a strict workspace → space → folder →
 
 ## API, authentication, and channels
 
-The versioned REST API uses `/v1`, JSON error envelopes, paginated collections, and task versions. Swagger is available at `/docs`; the [API guide](docs/modules/api-contracts.md) is the route and contract reference. The web client and planned curl cookbook use the same routes and authorization workflows.
+The versioned REST API uses `/v1`, JSON error envelopes, paginated collections, and task versions. The route overview below and [API guide](docs/modules/api-contracts.md) match the implemented handlers. A Swagger shell is available at `/docs`; complete DTO/security metadata and the second-channel curl proof are deferred as shown in the [roadmap](docs/implementation-plan.md).
 
 Users authenticate with local credentials and Flowboard access JWTs plus rotating refresh cookies. The API resolves the current membership and role; it does not trust request-body roles. Future SSO verifiers are designed to converge on the same Flowboard session service. See [identity and session decisions](docs/modules/identity.md) and [ADR-0004](docs/adr/0004-authentication.md).
 
@@ -83,5 +83,9 @@ The host binding is loopback-only, so PostgreSQL is not exposed to the local net
 - `GET /v1/lists/:id/board`, `/tasks`, `/resolved-statuses`, `/resolved-fields`
 - `POST /v1/lists/:id/tasks`; `GET/PATCH/DELETE /v1/tasks/:id`
 - `POST /v1/tasks/:id/placement`, `/move`
+- `GET/PATCH /v1/workspaces/:id`; `GET/POST /v1/containers`, `GET/PATCH/DELETE /v1/containers/:id`, `POST /v1/containers/reorder`
+- `GET/PUT /v1/workspaces/:id/status-set`; `GET/PUT/DELETE /v1/containers/:id/status-set`
+- `GET/POST /v1/containers/:id/fields`; `PATCH/DELETE /v1/fields/:id`; `POST /v1/containers/:id/fields/reorder`
+- `GET /v1/containers/:id/grants`; `PUT/DELETE /v1/containers/:id/grants/:userId`
 
-Day 2 opens a live Work overview after login, with visible task/list counts and upcoming due dates. The sidebar opens permission-filtered list boards, task APIs, Board and Table views, and task editing. Board cards open a wide modal; Table rows open a right-side drawer. Container/status/field/grant administration and the polished cross-list move UI remain scheduled for Day 3. See [docs/implementation-plan.md](docs/implementation-plan.md).
+The web opens a live, permission-filtered Work overview after login. Board cards open a modal and Table rows open a drawer. Admins can manage hierarchy, scoped statuses, local fields, and grants; task details offer a destination-aware move dialog. Static builds and an isolated PostgreSQL API smoke check passed; complete browser review and Day 4 application tests remain pending. See [docs/implementation-plan.md](docs/implementation-plan.md).

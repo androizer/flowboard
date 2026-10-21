@@ -13,6 +13,8 @@ export type Container = {
   name: string;
   type: 'space' | 'folder' | 'list';
   parentContainerId: string | null;
+  visibility?: 'public' | 'private';
+  position?: number;
 };
 export type StatusDefinition = {
   id: string;

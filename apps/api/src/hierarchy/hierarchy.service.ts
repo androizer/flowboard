@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Container, Prisma } from '@prisma/client';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Container, ContainerType, Prisma, Visibility } from '@prisma/client';
 import { PrismaService } from '../persistence/prisma.service';
 
 export type DomainDb = Prisma.TransactionClient;
@@ -49,5 +49,79 @@ export class HierarchyService {
     if (path.at(-1)?.type !== 'list' || path.length !== 3 || path[1].type !== 'folder')
       throw new NotFoundException('List is unavailable.');
     return path;
+  }
+
+  async workspace(id: string, db: DomainDb = this.prisma) {
+    const row = await db.workspace.findUnique({ where: { id } });
+    if (!row) throw new NotFoundException('Workspace is unavailable.');
+    return row;
+  }
+
+  async renameWorkspace(id: string, name: string, db: DomainDb) {
+    return db.workspace.update({ where: { id }, data: { name } });
+  }
+
+  async create(
+    workspaceId: string,
+    parent: Container | null,
+    type: ContainerType,
+    name: string,
+    visibility: Visibility,
+    db: DomainDb,
+  ) {
+    const siblings = await db.container.findMany({
+      where: { workspaceId, parentContainerId: parent?.id ?? null, archivedAt: null },
+      orderBy: { position: 'desc' },
+      take: 1,
+    });
+    return db.container.create({
+      data: {
+        workspaceId,
+        parentContainerId: parent?.id ?? null,
+        parentType: parent?.type ?? null,
+        type,
+        name,
+        visibility,
+        position: (siblings[0]?.position.toNumber() ?? 0) + 1,
+      },
+    });
+  }
+
+  async update(
+    id: string,
+    data: { name?: string; visibility?: Visibility; archivedAt?: Date },
+    db: DomainDb,
+  ) {
+    return db.container.update({ where: { id }, data });
+  }
+
+  async reorder(workspaceId: string, parentId: string | null, ids: string[], db: DomainDb) {
+    const siblings = await db.container.findMany({
+      where: { workspaceId, parentContainerId: parentId, archivedAt: null },
+    });
+    if (
+      siblings.length !== ids.length ||
+      new Set(ids).size !== ids.length ||
+      siblings.some((row) => !ids.includes(row.id))
+    )
+      throw new BadRequestException('Supply every active sibling exactly once.');
+    for (let index = 0; index < ids.length; index++)
+      await db.container.update({ where: { id: ids[index] }, data: { position: index + 1 } });
+  }
+
+  async retainedListPaths(workspaceId: string, db: DomainDb) {
+    const nodes = await db.container.findMany({ where: { workspaceId } });
+    const byId = new Map(nodes.map((node) => [node.id, node]));
+    return nodes
+      .filter((node) => node.type === 'list')
+      .map((node) => {
+        const path: Container[] = [];
+        let current: Container | undefined = node;
+        while (current) {
+          path.unshift(current);
+          current = current.parentContainerId ? byId.get(current.parentContainerId) : undefined;
+        }
+        return path;
+      });
   }
 }

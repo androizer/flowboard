@@ -3,6 +3,7 @@ import {
   HomeOutlined,
   LogoutOutlined,
   PlusOutlined,
+  SettingOutlined,
   UnorderedListOutlined,
 } from '@ant-design/icons';
 import {
@@ -39,6 +40,8 @@ import {
   updateTask,
 } from '../identity/session-client';
 import { TaskEditor } from './task-editor';
+import { AdminPanel } from './admin-panel';
+import { TaskMove } from './task-move';
 import { WorkspaceHome } from './workspace-home';
 
 type EditorState = { task: TaskProjection | null; presentation: 'modal' | 'drawer' };
@@ -93,6 +96,8 @@ export function Dashboard({
   const [members, setMembers] = useState<Array<{ id: string; name: string }>>([]);
   const [view, setView] = useState<'Board' | 'Table'>('Board');
   const [editor, setEditor] = useState<EditorState>();
+  const [movingTask, setMovingTask] = useState<TaskProjection>();
+  const [adminOpen, setAdminOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
   const [workspaceError, setWorkspaceError] = useState<string>();
@@ -181,18 +186,21 @@ export function Dashboard({
   }, [accessToken, board, messageApi, pendingHomeTask]);
 
   function openHome() {
+    setAdminOpen(false);
     setPendingHomeTask(undefined);
     setSelectedListId(undefined);
     setHomeRevision((value) => value + 1);
   }
 
   function openListFromHome(listId: string) {
+    setAdminOpen(false);
     setPendingHomeTask(undefined);
     setView('Board');
     setSelectedListId(listId);
   }
 
   function openTaskFromHome(id: string, listId: string) {
+    setAdminOpen(false);
     setPendingHomeTask({ id, listId });
     setView('Board');
     setSelectedListId(listId);
@@ -201,6 +209,12 @@ export function Dashboard({
   async function reloadBoard() {
     if (!selectedListId) return;
     setBoard(await getAllBoardPages(accessToken, selectedListId));
+  }
+
+  async function reloadTree() {
+    const tree = await getTree(accessToken);
+    setContainers(tree.items);
+    setHomeRevision((value) => value + 1);
   }
 
   async function openTask(id: string) {
@@ -315,6 +329,19 @@ export function Dashboard({
           >
             <HomeOutlined /> Home
           </button>
+          {actor.role === 'admin' && (
+            <button
+              type="button"
+              className={`workspace-home-link${adminOpen ? ' active' : ''}`}
+              onClick={() => {
+                setAdminOpen(true);
+                setSelectedListId(undefined);
+                setEditor(undefined);
+              }}
+            >
+              <SettingOutlined /> Admin
+            </button>
+          )}
           {!containers && !workspaceError && <Skeleton active paragraph={{ rows: 5 }} />}
           {containers && (
             <Tree
@@ -325,6 +352,7 @@ export function Dashboard({
               treeData={nodes}
               onSelect={(keys) => {
                 if (keys[0]) {
+                  setAdminOpen(false);
                   setPendingHomeTask(undefined);
                   setSelectedListId(String(keys[0]));
                 }
@@ -338,14 +366,24 @@ export function Dashboard({
             <Alert type="error" showIcon message={workspaceError} style={{ marginBottom: 16 }} />
           )}
           {error && <Alert type="error" showIcon message={error} style={{ marginBottom: 16 }} />}
-          {!selectedListId && home && (
+          {adminOpen && actor.role === 'admin' && containers && (
+            <AdminPanel
+              accessToken={accessToken}
+              workspaceId={actor.workspaceId}
+              containers={containers}
+              members={members}
+              onHierarchyChange={reloadTree}
+              onConfigChange={() => setHomeRevision((value) => value + 1)}
+            />
+          )}
+          {!adminOpen && !selectedListId && home && (
             <WorkspaceHome
               overview={home}
               onOpenList={openListFromHome}
               onOpenTask={openTaskFromHome}
             />
           )}
-          {selectedListId && board && (
+          {!adminOpen && selectedListId && board && (
             <>
               <Breadcrumb items={board.list.path.map((item) => ({ title: item.name }))} />
               <div className="list-heading">
@@ -454,7 +492,7 @@ export function Dashboard({
               )}
             </>
           )}
-          {!home && !board && loading && <Skeleton active paragraph={{ rows: 8 }} />}
+          {!adminOpen && !home && !board && loading && <Skeleton active paragraph={{ rows: 8 }} />}
           {selectedListId && !board && !loading && !error && selected && (
             <Empty description="Select a list to begin." />
           )}
@@ -469,6 +507,33 @@ export function Dashboard({
           members={members}
           onClose={() => setEditor(undefined)}
           onSave={saveTask}
+          onMove={
+            editor.task
+              ? () => {
+                  setMovingTask(editor.task!);
+                  setEditor(undefined);
+                }
+              : undefined
+          }
+        />
+      )}
+      {movingTask && board && (
+        <TaskMove
+          accessToken={accessToken}
+          task={movingTask}
+          lists={containers ?? []}
+          sourceFields={board.fields}
+          onClose={() => setMovingTask(undefined)}
+          onMoved={async () => {
+            try {
+              await reloadBoard();
+              void messageApi.success('Task moved.');
+            } catch {
+              void messageApi.warning(
+                'Task moved, but the list could not refresh. Reopen it to reload.',
+              );
+            }
+          }}
         />
       )}
     </div>

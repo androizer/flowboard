@@ -1,6 +1,6 @@
 # Module: statuses
 
-Status: Day 2 effective-list resolution and task validation implemented; configuration mutations/safety remain planned. Code owner: `apps/api/src/statuses`. Navigation: [hub](../README.md), [ADR-0003](../adr/0003-scoped-configuration.md), [workflows](workflows.md).
+Status: Day 2 resolution/task validation and Day 3 candidate set writes/reset/admin editor added; runtime verification pending. Code owner: `apps/api/src/statuses`. Navigation: [hub](../README.md), [ADR-0003](../adr/0003-scoped-configuration.md), [workflows](workflows.md).
 
 ## 1. Purpose and example
 
@@ -141,5 +141,7 @@ Build resolution/model in Day 2, apply to tasks/board immediately, and add space
 | STATUS-08 | Edit ancestor -> only lists whose effective set changes are checked; lower override remains independent. |
 | STATUS-09 | Rename/color/reorder -> task keys unchanged and board order updated.                                     |
 | STATUS-10 | Reference held only by archived task -> destructive change still blocked.                                |
+| STATUS-11 | Workspace default edit -> lower overrides shield lists; inheriting archived lists are checked.           |
+| STATUS-12 | Failed 409 save/reset -> original set/order and unsaved UI draft remain available.                       |
 
 Changing replacement behavior, stable keys, or safety policy requires [ADR-0003](../adr/0003-scoped-configuration.md), move/config workflow updates, frontend inherited/local explanations, and the derived ER if schema changes.

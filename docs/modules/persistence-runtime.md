@@ -126,11 +126,11 @@ Build Compose, schema/constraints, signing bootstrap, and seed in Day 1; share t
 | ------ | ---------------------------------------------------------------------------------------------------------------------------- |
 | RUN-01 | Clean machine with Docker only -> one command reaches ready and seeded UI.                                                   |
 | RUN-02 | Restart after edits -> data and signing secret persist; no duplicate seed or password overwrite.                             |
-| RUN-03 | Migration or enabled demo-seed failure -> no misleading readiness; seed transaction does not partially commit.              |
+| RUN-03 | Migration or enabled demo-seed failure -> no misleading readiness; seed transaction does not partially commit.               |
 | RUN-04 | Composite-FK/type/unique violations -> same-workspace/user/session, strict parent, and task-list constraints enforced by DB. |
 | RUN-05 | Multi-owner write fails midway -> all task/config data rolls back.                                                           |
 | RUN-06 | Refresh replay -> revocation survives HTTP 401, unlike an ordinary rolled-back error.                                        |
-| RUN-07 | Non-demo startup skips seed; production missing keys or demo-seed enabled -> fail closed; no secret in logs/artifacts.        |
+| RUN-07 | Non-demo startup skips seed; production missing keys or demo-seed enabled -> fail closed; no secret in logs/artifacts.       |
 | RUN-08 | Board response under config write -> internally consistent snapshot; no cross-request snapshot promise.                      |
 | RUN-09 | Final test command -> PostgreSQL-backed backend tests and browser tests run without host tooling.                            |
 

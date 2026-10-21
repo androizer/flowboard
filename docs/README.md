@@ -1,6 +1,6 @@
 # Flowboard documentation hub
 
-Status: Day 1 foundation and Day 2 Work overview/task/permission views are implemented; Day 3 administration and Day 4 executable tests remain planned.
+Status: Day 1–2 foundation/task views are implemented. Day 3 administration and move UI code is present; static builds pass, while runtime verification and Day 4 executable tests remain pending.
 
 Start here. These documents explain what Flowboard does, why it is structured this way, and how to build one part without accidentally breaking another.
 

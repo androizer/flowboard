@@ -1,5 +1,5 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
-import { Container, ContainerGrant } from '@prisma/client';
+import { Container, ContainerGrant, GrantMode } from '@prisma/client';
 import { HierarchyService, DomainDb } from '../hierarchy/hierarchy.service';
 import { PrismaService } from '../persistence/prisma.service';
 
@@ -11,6 +11,35 @@ export class PermissionsService {
     private readonly prisma: PrismaService,
     private readonly hierarchy: HierarchyService,
   ) {}
+
+  assertAdmin(actor: DomainActor) {
+    if (actor.role !== 'admin') throw new ForbiddenException('Admin access is required.');
+  }
+
+  async grants(workspaceId: string, containerId: string, db: DomainDb) {
+    return db.containerGrant.findMany({
+      where: { workspaceId, containerId },
+      orderBy: { userId: 'asc' },
+    });
+  }
+
+  async putGrant(
+    workspaceId: string,
+    containerId: string,
+    userId: string,
+    mode: GrantMode,
+    db: DomainDb,
+  ) {
+    return db.containerGrant.upsert({
+      where: { workspaceId_containerId_userId: { workspaceId, containerId, userId } },
+      create: { workspaceId, containerId, userId, mode },
+      update: { mode },
+    });
+  }
+
+  async deleteGrant(workspaceId: string, containerId: string, userId: string, db: DomainDb) {
+    await db.containerGrant.deleteMany({ where: { workspaceId, containerId, userId } });
+  }
 
   private allowed(path: Container[], grants: ContainerGrant[], actor: DomainActor) {
     if (actor.role === 'admin') return true;

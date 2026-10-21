@@ -36,3 +36,11 @@
 ## 2026-10-21 — API startup correction
 
 - Corrected the Docker startup path after verification found that unconditional demo seeding stopped non-demo API startup. The startup script now applies migrations on every launch, runs the idempotent seed only when `FLOWBOARD_DEMO_MODE=true`, and then starts the API.
+
+## 2026-10-21 — Day 3 administration and configuration
+
+- Added admin-only container, grant, status-set, and custom-field workflows through the existing owner services and shared workspace transaction. Reused the retained-task query for status/field safety, including archived tasks, instead of validating only visible board rows.
+- Added the web admin panel and cross-list move corrections. Failed candidate saves preserve the draft; the server remains authoritative for permissions and effective configuration.
+- Corrected a local Prisma generation issue during static verification: the checked-in schema had a new `parent_type` relation key while the installed generated client was stale. Regenerated from the repository schema using a writable temporary Prisma engine cache; no schema decision changed.
+- Deferred the second-channel cookbook/Swagger completion at the user's request and documented its remaining proof steps. No executable application tests were added for Day 3; new edge cases are TODO rows for Day 4.
+- Ran a disposable Docker/PostgreSQL manual API smoke check: Alice admin writes, Bob denial/member write rejection, 409 blockers for unsafe status reset and required field creation, strict container creation, local field creation, and inherited status preview. Removed the isolated containers and volumes afterward. This is not executable test coverage or a complete browser review.

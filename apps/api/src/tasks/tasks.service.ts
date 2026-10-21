@@ -25,6 +25,14 @@ export class TasksService {
     });
   }
 
+  async retained(workspaceId: string, listIds: string[], db: DomainDb) {
+    if (!listIds.length) return [];
+    return db.task.findMany({
+      where: { workspaceId, primaryListId: { in: listIds } },
+      include: taskInclude,
+    });
+  }
+
   async overview(workspaceId: string, listIds: string[], now: Date, through: Date, db: DomainDb) {
     if (!listIds.length)
       return {

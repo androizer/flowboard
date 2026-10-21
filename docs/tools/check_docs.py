@@ -40,7 +40,7 @@ AUTH_COLUMNS = {
     "REFRESH_TOKENS": {"id", "session_id", "parent_token_id", "token_hash", "created_at", "expires_at", "consumed_at"},
     "WORKSPACES": {"id", "name"},
 }
-EXPECTED_CASES = {"AUTH": 15, "HIER": 8, "PERM": 10, "STATUS": 10, "FIELD": 10, "TASK": 11, "FLOW": 10, "RUN": 9, "WEB": 11, "API": 9}
+EXPECTED_CASES = {"AUTH": 15, "HIER": 10, "PERM": 12, "STATUS": 12, "FIELD": 13, "TASK": 11, "FLOW": 12, "RUN": 9, "WEB": 14, "API": 11}
 
 
 def require(condition: bool, message: str) -> None:
@@ -55,7 +55,7 @@ def read_schema():
         text = path.read_text()
         for section in SECTIONS:
             require(section in text, f"{path.name}: missing section {section}")
-        require(re.search(r"^Status: (planned\.|Day \d+ .*implemented;)", text, re.M), f"{path.name}: implementation status must be explicit")
+        require(re.search(r"^Status: (planned\.|Day .+ (?:implemented|added)[;\.])", text, re.M), f"{path.name}: implementation status must be explicit")
         require("```mermaid\nflowchart" in text, f"{path.name}: missing workflow diagram")
         require("```mermaid\nsequenceDiagram" in text, f"{path.name}: missing sequence diagram")
         case_ids.extend(re.findall(r"^\| ([A-Z]+-\d{2}) \|", text, re.M))
@@ -121,7 +121,7 @@ def render_er(definitions, owners, relationships):
         "",
         "Generated from the owned schema blocks in the module guides. Do not edit columns here independently.",
         "",
-        "Status: schema reference for the implemented Day 1 foundation and planned later phases. [Hub](README.md) | [Architecture](architecture.md) | [Business example](business-walkthrough.md)",
+        "Status: schema reference for the implemented foundation and Day 3 administration; runtime verification and Day 4 tests remain pending. [Hub](README.md) | [Architecture](architecture.md) | [Business example](business-walkthrough.md)",
         "",
         "Refresh with `python3 docs/tools/check_docs.py --write`; check with `python3 docs/tools/check_docs.py --check`.",
         "",

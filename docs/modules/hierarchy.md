@@ -1,6 +1,6 @@
 # Module: hierarchy
 
-Status: Day 1 persistence and Day 2 permission-filtered tree implemented; hierarchy administration remains planned. Code owner: `apps/api/src/hierarchy`. Navigation: [hub](../README.md), [ADR-0002](../adr/0002-hierarchy-and-access.md), [complete ER](../er-diagram.md).
+Status: Day 1–2 persistence/tree and Day 3 administration routes/UI added; runtime verification pending. Code owner: `apps/api/src/hierarchy`. Navigation: [hub](../README.md), [ADR-0002](../adr/0002-hierarchy-and-access.md), [complete ER](../er-diagram.md).
 
 ## 1. Purpose and example
 
@@ -147,5 +147,7 @@ Build basic schema/ancestry in Day 1, consumption by resolvers/tasks in Day 2, a
 | HIER-06 | Safety query for retained archived data -> still finds configuration usage.                                                   |
 | HIER-07 | Empty container -> valid response with no children.                                                                           |
 | HIER-08 | Member attempts container mutation -> 403; second workspace creation unsupported.                                             |
+| HIER-09 | Archive parent with descendant tasks/config -> active reads return 404 while retained safety queries still find them.         |
+| HIER-10 | Reorder with omitted, duplicated, archived, or foreign sibling -> 400 and original positions remain.                          |
 
 For a parent/type/archive change, update hierarchy, permissions, status/field ancestry callers, task/move examples, [ADR-0002](../adr/0002-hierarchy-and-access.md), and schema constraints. Never add nesting by only relaxing one UI control.

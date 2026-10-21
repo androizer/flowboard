@@ -1,6 +1,6 @@
 # Module: custom fields
 
-Status: Day 2 effective-list resolution, typed answer validation, and task values implemented; configuration mutations/safety remain planned. Code owner: `apps/api/src/custom-fields`. Navigation: [hub](../README.md), [ADR-0003](../adr/0003-scoped-configuration.md), [tasks](tasks.md), [workflows](workflows.md).
+Status: Day 2 resolution/answer validation and Day 3 local field/option writes, reorder, safety checks, and admin editor added; runtime verification pending. Code owner: `apps/api/src/custom-fields`. Navigation: [hub](../README.md), [ADR-0003](../adr/0003-scoped-configuration.md), [tasks](tasks.md), [workflows](workflows.md).
 
 ## 1. Purpose and example
 
@@ -166,5 +166,8 @@ Build definition/resolver/validator in Day 2, connect task forms/value writes im
 | FIELD-08 | Type change with stored answers -> 409; label/option label reorder -> preserves IDs/answers.          |
 | FIELD-09 | New required definition or required=true with unsatisfied tasks -> 409 and no partial config change.  |
 | FIELD-10 | Move lacks destination required answer or retains source-only answer -> explicit correction required. |
+| FIELD-11 | Unused select option removal succeeds; used option in archived task blocks and preserves option set.  |
+| FIELD-12 | Required field create/toggle with a missing archived answer -> 409 and no partial change.             |
+| FIELD-13 | Duplicate workspace key or forged option ID -> reject without changing existing definitions.          |
 
 For changes, update this guide, [ADR-0003](../adr/0003-scoped-configuration.md), task/move workflows, form rendering/error paths, seed answers, and test TODOs. A new field type requires validation and input rendering, not merely a new enum value.

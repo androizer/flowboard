@@ -1,6 +1,6 @@
 # Module: API and contracts
 
-Status: Day 2 tree, workspace overview, board, resolved configuration, user lookup, and task HTTP routes implemented; admin routes and complete Swagger/cookbook remain planned. Code owners: `libs/shared/contracts` and NestJS HTTP adapters. Navigation: [hub](../README.md), [ADR-0005](../adr/0005-delivery-and-consistency.md), [workflows](workflows.md).
+Status: Day 2 task/read routes and Day 3 admin routes added. Swagger route metadata and the second-channel curl cookbook remain deferred by user direction; runtime verification pending. Code owners: `libs/shared/contracts` and NestJS HTTP adapters. Navigation: [hub](../README.md), [ADR-0005](../adr/0005-delivery-and-consistency.md), [workflows](workflows.md).
 
 ## 1. Purpose and example
 
@@ -71,11 +71,13 @@ Successful creation returns 201; reads and state-returning updates return 200; a
 
 Config/grant/container mutations are admin-only and use workflows. Removing unused definitions/options/grants/assignment/value rows is intentional; never cascade-delete task history. A nonexistent local set reads as local=null with inherited preview. Resetting a local set is subject to retained-task safety checks. Per-owner definition collections are paginated; resolved schema/set payloads are complete configuration snapshots.
 
-Shared contracts declare request/response types, enums, pagination/error/Actor-related common types without runtime provider or ORM dependencies. Nest DTOs implement transport validation; dynamic schema validation remains in custom fields/statuses. The web imports contracts and calls HTTP, never backend functions.
+Day 3 admin request shapes: container create accepts `{ parentId, type, name, visibility? }`; a reorder accepts `{ parentId, ids }` with every active sibling exactly once. Status PUT accepts an ordered `{ statuses: [{ key, name, category, color }] }` complete set. Field create/PATCH accepts `{ key, name, type, required, options }`, with ordered options `{ id?, label, color }`; an existing field key is immutable, and an existing option ID must belong to that field. Grant PUT accepts `{ mode: "allow" | "deny" }`. A status-set GET returns `local` and `inherited`; `local: null` means the selected owner has no override.
+
+Shared contracts declare request/response types, enums, pagination/error/Actor-related common types without runtime provider or ORM dependencies. Controllers parse route UUIDs; workflows whitelist Day 3 JSON candidates and call the owner validators. Complete typed DTO and Swagger metadata remain follow-up work. The web imports contracts and calls HTTP, never backend functions.
 
 ### Secondary client boundary
 
-The Day 2 task/board endpoints must be usable without the React application: a client signs in through `/v1/auth/login`, sends the returned Flowboard access token as a Bearer token, and reads or mutates the same `/v1` resources as the web UI. The curl cookbook is the MVP's lightweight secondary client proof, completed with the running routes in Day 3. A future CLI is an HTTP client only; it must not import NestJS/domain repositories, bypass workflows, or require CLI-specific business endpoints.
+The task/board/admin routes are designed for any HTTP client: a client signs in through `/v1/auth/login`, sends the returned Flowboard access token as a Bearer token, and reads or mutates the same `/v1` resources as the web UI. The user deferred implementing the second channel during Day 3. The curl cookbook and runtime parity proof are therefore pending, and the assignment's second-channel evidence is not yet satisfied. A future CLI is an HTTP client only; it must not import NestJS/domain repositories, bypass workflows, or require CLI-specific business endpoints.
 
 For refresh and logout, a non-browser client can retain the issued refresh cookie in a cookie jar and send the configured allowed Origin on cookie-sensitive auth requests, following the existing identity contract. It receives the same status codes and error envelope as the browser. This is a client transport detail, not a separate credential or session model. The shared contracts and Swagger examples should describe the HTTP exchange without assuming React component state.
 
@@ -135,7 +137,7 @@ Move request example (UUID placeholders must be replaced with IDs returned by th
 
 When statusKey is omitted on move, retain the current key only if valid in destination. An omitted beforeTaskId appends to the destination group. Task create requires title and statusKey; server assigns creator/list scope/version/position/timestamps. Config PUT/PATCH checks a candidate against current data inside the lock. Config records have no version field in this schema, so later valid admin edits can overwrite earlier cosmetic edits; richer config conflict handling is future scope.
 
-The cookbook demonstrates login with an allowed Origin and cookie jar, capture/use of access JWT, tree/board lookup, task edit, refresh, and logout. Examples must run against actual routes and never rely on X-User-Id. Swagger documents auth/security and matches this route catalog when implemented.
+When scheduled, the cookbook will demonstrate login with an allowed Origin and cookie jar, capture/use of access JWT, tree/board lookup, task edit, refresh, and logout. Examples must run against actual routes and never rely on X-User-Id. The existing Swagger shell is not complete route/schema documentation yet; it needs request/response DTO metadata and a route/security parity check.
 
 ## 5. Build phases, failure cases, and change guide
 
@@ -152,5 +154,7 @@ Define shared types/error conventions in Day 1, domain routes/Swagger with workf
 | API-07 | Public health/docs -> no domain secrets/data; domain route without JWT -> 401.                                                                             |
 | API-08 | Local vs inherited config and reset endpoints -> correct complete snapshots and safety policy.                                                             |
 | API-09 | Overview requested as another workspace or by a member with private lists -> 404 or correctly filtered counts/items; same contract usable by curl.         |
+| API-10 | Admin config/grant routes with malformed or foreign IDs -> 400/404 and no raw Prisma failure or partial write.                                             |
+| API-11 | Rejected status/field candidate -> 409 on retained task conflict, 400 on malformed candidate; standard error envelope.                                     |
 
 When changing an endpoint, update this route catalog, owner guide, shared DTOs, Swagger, web caller/cookbook, and acceptance cases in the same change. Keep endpoint changes out of repository implementation details.

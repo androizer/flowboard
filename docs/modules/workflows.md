@@ -1,6 +1,6 @@
 # Module: application workflows
 
-Status: Day 2 tree/overview/board/task workflows implemented; configuration and container administration remain planned. Code owner: `apps/api/src/workflows`. Navigation: [hub](../README.md), [architecture](../architecture.md), [ADR-0005](../adr/0005-delivery-and-consistency.md).
+Status: Day 2 tree/overview/board/task and Day 3 configuration/grant/container administration workflows added; runtime verification pending. Code owner: `apps/api/src/workflows`. Navigation: [hub](../README.md), [architecture](../architecture.md), [ADR-0005](../adr/0005-delivery-and-consistency.md).
 
 ## 1. Purpose and example
 
@@ -173,5 +173,7 @@ Create read/task workflows in Day 2 and config/admin workflows in Day 3. Control
 | FLOW-08 | Failure injected between owned writes -> rollback every change.                                                                                        |
 | FLOW-09 | Separate board pages straddle config change -> client refetches rather than assumes a cross-request snapshot.                                          |
 | FLOW-10 | Overview for Alice/Bob/Carol -> only each actor's accessible active lists and tasks contribute; one response has consistent counts and upcoming order. |
+| FLOW-11 | Status/required-field change racing with task edit -> serialized result; invalid candidate rolls back.                                                 |
+| FLOW-12 | Member submits admin mutation with forged body role -> 403 after fresh membership check; no owner write.                                               |
 
 When changing a workflow, update the order diagram, transaction boundary, owner interfaces, HTTP contract, and failure example together. Do not move cross-domain validation into a task or config repository to simplify a controller.

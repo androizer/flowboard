@@ -58,6 +58,7 @@ export function TaskEditor({
   members,
   onClose,
   onSave,
+  onMove,
 }: {
   board: BoardResponse;
   task: TaskProjection | null;
@@ -65,6 +66,7 @@ export function TaskEditor({
   members: Array<{ id: string; name: string }>;
   onClose: () => void;
   onSave: (body: Record<string, unknown>) => Promise<void>;
+  onMove?: () => void;
 }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>();
@@ -181,6 +183,7 @@ export function TaskEditor({
         ))}
       </Row>
       <div className="task-editor-actions">
+        {task && onMove && <Button onClick={onMove}>Move to another list</Button>}
         <Button onClick={onClose}>Cancel</Button>
         <Button type="primary" htmlType="submit" loading={saving}>
           {task ? 'Save changes' : 'Create task'}

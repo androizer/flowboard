@@ -1,6 +1,6 @@
 # Module: permissions
 
-Status: Day 2 tree, list, and task access enforcement implemented; grant administration remains planned. Code owner: `apps/api/src/permissions`. Navigation: [hub](../README.md), [ADR-0002](../adr/0002-hierarchy-and-access.md), [hierarchy](hierarchy.md).
+Status: Day 2 tree/list/task access and Day 3 grant administration routes/UI added; runtime verification pending. Code owner: `apps/api/src/permissions`. Navigation: [hub](../README.md), [ADR-0002](../adr/0002-hierarchy-and-access.md), [hierarchy](hierarchy.md).
 
 ## 1. Purpose and example
 
@@ -151,5 +151,7 @@ Build the backend policy with hierarchy in Days 1-2, apply it to every workflow 
 | PERM-08 | Inactive admin membership -> no bypass; reject.                                                       |
 | PERM-09 | Member config/container/grant write -> 403 even if list accessible.                                   |
 | PERM-10 | Move with either side inaccessible -> no mutation; no destination schema leak.                        |
+| PERM-11 | Revoked admin membership during grant/config write -> fresh role check rejects after workspace lock.  |
+| PERM-12 | Inactive or foreign grant target -> 400; switching allow/deny replaces one row.                       |
 
 Changing precedence or edit rights requires [ADR-0002](../adr/0002-hierarchy-and-access.md), the tree/direct-access examples, and all read/write workflow call sites to change together. Do not implement different permission algorithms per screen.

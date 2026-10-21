@@ -8,7 +8,7 @@ Moves and config edits span several owners. Reviewers should run the application
 
 ## Decision
 
-Use versioned REST, one error envelope, offset/limit collection pages, Swagger, and a real-login curl cookbook. Domain writes lock the workspace row and recheck membership/access/config inside the transaction. Task versions detect stale edits. Board configuration/tasks use one consistent snapshot. Auth rotation uses session/token locks separately.
+Use versioned REST, one error envelope, offset/limit collection pages, Swagger, and a real-login curl cookbook. The user deferred the cookbook/second-channel implementation from Day 3; the HTTP boundary remains the planned design and assignment proof is pending. Domain writes lock the workspace row and recheck membership/access/config inside the transaction. Task versions detect stale edits. Board configuration/tasks use one consistent snapshot. Auth rotation uses session/token locks separately.
 
 Run web/API/PostgreSQL with one Compose command, persistent data, idempotent seeds, and local generated signing material. No extra service is required. Record application test TODOs first, then implement required cases after Day 3 freeze. Static/documentation/build checks can run throughout.
 

@@ -2,7 +2,7 @@
 
 Generated from the owned schema blocks in the module guides. Do not edit columns here independently.
 
-Status: schema reference for the implemented Day 1 foundation and planned later phases. [Hub](README.md) | [Architecture](architecture.md) | [Business example](business-walkthrough.md)
+Status: schema reference for the implemented foundation and Day 3 administration; runtime verification and Day 4 tests remain pending. [Hub](README.md) | [Architecture](architecture.md) | [Business example](business-walkthrough.md)
 
 Refresh with `python3 docs/tools/check_docs.py --write`; check with `python3 docs/tools/check_docs.py --check`.
 

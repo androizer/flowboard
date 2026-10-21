@@ -1,6 +1,6 @@
 # Module: web client
 
-Status: Day 1 login/session and Day 2 workspace overview, sidebar, board, table, and task detail/create UI implemented; configuration and polished move UX remain planned. Code owner: `apps/web/src`. Navigation: [hub](../README.md), [API/contracts](api-contracts.md), [identity](identity.md), [ADR-0001](../adr/0001-modular-monolith.md).
+Status: Day 1–2 login/task views and Day 3 admin configuration, grants, hierarchy, and move correction UI added; runtime verification pending. Code owner: `apps/web/src`. Navigation: [hub](../README.md), [API/contracts](api-contracts.md), [identity](identity.md), [ADR-0001](../adr/0001-modular-monolith.md).
 
 ## 1. Purpose and example
 
@@ -17,8 +17,8 @@ React uses Ant Design for forms, table, tree, modal, and drawer. Day 2 uses nati
 | Work overview       | Implemented: live visible-task/list/due-soon totals, per-list counts, and upcoming due dates; list and task links enter the existing Board view. Empty states handle no accessible lists or upcoming tasks.                                                     |
 | Kanban              | Implemented: resolved columns including empty ones; cards with title, assignees, priority, due date; desktop drag placement. Selecting a card opens a wide modal.                                                                                               |
 | Task table          | Implemented: built-ins and resolved custom-field columns, due-date/priority sorting; selecting a row opens a right-side drawer.                                                                                                                                 |
-| Task detail/move    | Implemented: built-ins and inputs generated from resolved schema, task create/edit, saved version. Destination correction UI remains Day 3.                                                                                                                     |
-| Admin configuration | Simple space/list status forms, field/options forms, container/grant forms, owner/inherited labels and safety errors.                                                                                                                                           |
+| Task detail/move    | Built-ins and inputs generated from resolved schema, task create/edit, saved version; Day 3 destination selector loads resolved config and requires source-only clears.                                                                                         |
+| Admin configuration | Day 3 admin panel offers hierarchy, complete local status sets/reset, local field/options/order, and allow/deny grants. Status inheritance is labeled; failed saves preserve drafts. Runtime verification remains pending.                                      |
 
 The client owns no business ER table. All stored task/config/membership data comes from the API. Access tokens remain in memory; refresh tokens are HttpOnly cookies managed by the browser. No token localStorage persistence or direct provider SDK use is allowed here for the MVP.
 
@@ -27,11 +27,11 @@ The client owns no business ER table. All stored task/config/membership data com
 | Server-resolved configuration | Ensures columns and forms match validation.                                                                                                                                                                                                  |
 | Server-owned overview         | One authorized read model counts only active tasks in accessible active lists; no browser aggregation across private lists. Due soon means from the response time to seven days later; upcoming items are the five nearest future due dates. |
 | Confirmed mutations           | Keep pending indicators and apply/refetch confirmed results; optimistic conflict UI is deferred.                                                                                                                                             |
-| Identity-scoped queries       | Include current internal user, workspace, and relevant list in cache keys.                                                                                                                                                                   |
+| Identity-scoped state         | Clear selected list, board, drawer, and pending work when the signed-in identity changes.                                                                                                                                                    |
 | No aggregate boards           | Different lists can resolve different status sets, so only selected-list views are required.                                                                                                                                                 |
 | Server-backed permissions     | Hide unsupported admin controls for clarity, but rely on server authorization for security.                                                                                                                                                  |
 
-Field inputs: text -> Input/TextArea, number -> InputNumber, single/multi-select -> Select, date -> DatePicker, checkbox -> Checkbox. Bind checkbox values explicitly as booleans so false is not lost. Date inputs send YYYY-MM-DD; due dates send ISO datetimes. Avoid numeric-string coercion. Render description/labels safely, without executing user HTML.
+Field inputs: text -> Input/TextArea, number -> InputNumber, single/multi-select -> Select, date -> native date input, checkbox -> Checkbox. Bind checkbox values explicitly as booleans so false is not lost. Date inputs send YYYY-MM-DD; due dates send ISO datetimes. Avoid numeric-string coercion. Render description/labels safely, without executing user HTML.
 
 ## 3. Connections and interfaces
 
@@ -155,5 +155,8 @@ Day 2 implements the initial shell, Work overview, board/table, task modal/drawe
 | WEB-09 | Reload, logout-all, unsupported refresh coordination, lost refresh response -> correct login/reset behavior.                                                  |
 | WEB-10 | Board/table -> same tasks, at least two custom columns, due-date/priority sorts, empty states.                                                                |
 | WEB-11 | Login/Home -> current permission-filtered counts and nearest due items; list/task links navigate correctly; no accessible lists renders a useful empty state. |
+| WEB-12 | Admin status/field save rejected with 409 -> input draft remains; server configuration and task data stay unchanged.                                          |
+| WEB-13 | Move to list with different status/required fields/source-only values -> correction controls match destination; failed move preserves task.                   |
+| WEB-14 | Member loads same app -> no admin entry; direct admin API request remains 403.                                                                                |
 
 When changing a screen, identify whether it is presentation-only or changes a domain contract. Update the owning business module first for rule changes, then contracts/API client/forms/cache invalidation and browser TODOs. Do not copy permission or inheritance rules into components.

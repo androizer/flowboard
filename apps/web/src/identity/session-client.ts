@@ -267,3 +267,160 @@ export function placeTask(accessToken: string, id: string, body: unknown) {
     accessToken,
   );
 }
+
+export function moveTask(accessToken: string, id: string, body: unknown) {
+  return api<TaskProjection>(
+    `/v1/tasks/${id}/move`,
+    { method: 'POST', body: JSON.stringify(body) },
+    accessToken,
+  );
+}
+export async function getResolvedConfig(accessToken: string, listId: string) {
+  const [statuses, fields] = await Promise.all([
+    api<{ statuses: BoardResponse['statuses']; source: BoardResponse['statusSource'] }>(
+      `/v1/lists/${listId}/resolved-statuses`,
+      {},
+      accessToken,
+    ),
+    api<{ fields: BoardResponse['fields'] }>(
+      `/v1/lists/${listId}/resolved-fields`,
+      {},
+      accessToken,
+    ),
+  ]);
+  return { ...statuses, ...fields };
+}
+
+export type AdminContainer = Container & {
+  visibility: 'public' | 'private';
+  position: string | number;
+};
+export type LocalStatusSet = {
+  local: { statuses: Array<{ key: string; name: string; category: string; color: string }> } | null;
+  inherited: {
+    statuses: Array<{ key: string; name: string; category: string; color: string }>;
+    statusSource: { type: string; id: string };
+  } | null;
+};
+export type LocalField = {
+  id: string;
+  key: string;
+  name: string;
+  type: string;
+  required: boolean;
+  options: Array<{ id: string; label: string; color: string }>;
+};
+export type Grant = { userId: string; mode: 'allow' | 'deny' };
+
+export function getWorkspace(accessToken: string, id: string) {
+  return api<{ id: string; name: string }>(`/v1/workspaces/${id}`, {}, accessToken);
+}
+export function renameWorkspace(accessToken: string, id: string, name: string) {
+  return api<void>(
+    `/v1/workspaces/${id}`,
+    { method: 'PATCH', body: JSON.stringify({ name }) },
+    accessToken,
+  );
+}
+export function createContainer(accessToken: string, body: unknown) {
+  return api<AdminContainer>(
+    '/v1/containers',
+    { method: 'POST', body: JSON.stringify(body) },
+    accessToken,
+  );
+}
+export function updateContainer(accessToken: string, id: string, body: unknown) {
+  return api<AdminContainer>(
+    `/v1/containers/${id}`,
+    { method: 'PATCH', body: JSON.stringify(body) },
+    accessToken,
+  );
+}
+export function archiveContainer(accessToken: string, id: string) {
+  return api<void>(`/v1/containers/${id}`, { method: 'DELETE' }, accessToken);
+}
+export function reorderContainers(accessToken: string, parentId: string | null, ids: string[]) {
+  return api<void>(
+    '/v1/containers/reorder',
+    { method: 'POST', body: JSON.stringify({ parentId, ids }) },
+    accessToken,
+  );
+}
+export function getStatusSet(accessToken: string, workspaceId: string, ownerId: string | null) {
+  const path = ownerId
+    ? `/v1/containers/${ownerId}/status-set`
+    : `/v1/workspaces/${workspaceId}/status-set`;
+  return api<LocalStatusSet>(path, {}, accessToken);
+}
+export function putStatusSet(
+  accessToken: string,
+  workspaceId: string,
+  ownerId: string | null,
+  statuses: unknown[],
+) {
+  const path = ownerId
+    ? `/v1/containers/${ownerId}/status-set`
+    : `/v1/workspaces/${workspaceId}/status-set`;
+  return api<void>(path, { method: 'PUT', body: JSON.stringify({ statuses }) }, accessToken);
+}
+export function resetStatusSet(accessToken: string, ownerId: string) {
+  return api<void>(`/v1/containers/${ownerId}/status-set`, { method: 'DELETE' }, accessToken);
+}
+export async function getLocalFields(accessToken: string, ownerId: string) {
+  const items: LocalField[] = [];
+  let more = true;
+  while (more) {
+    const result = await api<{ items: LocalField[]; page: { hasMore: boolean } }>(
+      `/v1/containers/${ownerId}/fields?offset=${items.length}&limit=100`,
+      {},
+      accessToken,
+    );
+    if (result.page.hasMore && !result.items.length)
+      throw new Error('Field collection changed while loading.');
+    items.push(...result.items);
+    more = result.page.hasMore;
+  }
+  return items;
+}
+export function createField(accessToken: string, ownerId: string, body: unknown) {
+  return api<LocalField>(
+    `/v1/containers/${ownerId}/fields`,
+    { method: 'POST', body: JSON.stringify(body) },
+    accessToken,
+  );
+}
+export function updateField(accessToken: string, id: string, body: unknown) {
+  return api<LocalField>(
+    `/v1/fields/${id}`,
+    { method: 'PATCH', body: JSON.stringify(body) },
+    accessToken,
+  );
+}
+export function deleteField(accessToken: string, id: string) {
+  return api<void>(`/v1/fields/${id}`, { method: 'DELETE' }, accessToken);
+}
+export function reorderFields(accessToken: string, ownerId: string, ids: string[]) {
+  return api<void>(
+    `/v1/containers/${ownerId}/fields/reorder`,
+    { method: 'POST', body: JSON.stringify({ ids }) },
+    accessToken,
+  );
+}
+export function getGrants(accessToken: string, ownerId: string) {
+  return api<{ items: Grant[] }>(`/v1/containers/${ownerId}/grants`, {}, accessToken);
+}
+export function putGrant(
+  accessToken: string,
+  ownerId: string,
+  userId: string,
+  mode: Grant['mode'],
+) {
+  return api<Grant>(
+    `/v1/containers/${ownerId}/grants/${userId}`,
+    { method: 'PUT', body: JSON.stringify({ mode }) },
+    accessToken,
+  );
+}
+export function deleteGrant(accessToken: string, ownerId: string, userId: string) {
+  return api<void>(`/v1/containers/${ownerId}/grants/${userId}`, { method: 'DELETE' }, accessToken);
+}
