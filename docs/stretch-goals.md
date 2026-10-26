@@ -10,6 +10,27 @@ When I assign a task to someone, I’d send that person a notification through S
 
 ### How I’d build it
 
+```mermaid
+sequenceDiagram
+    actor Assigner
+    participant Browser
+    participant API as Assignment workflow
+    participant DB as PostgreSQL
+    participant Dispatcher
+    participant Stream as SSE connection
+    participant Recipient
+    Assigner->>Browser: Assign task to recipient
+    Browser->>API: Assignment request
+    API->>DB: Check access; update assignee; write outbox event
+    DB-->>API: Commit assignment and event
+    API-->>Browser: Assignment confirmed
+    Dispatcher->>DB: Read committed event
+    Dispatcher->>Stream: Publish recipient notification
+    Stream-->>Recipient: SSE event
+    Recipient->>API: Fetch task if current details are needed
+    API-->>Recipient: Authorized task representation
+```
+
 1. I’d send the assignment through the existing workflow so it can authenticate the user and check task access and rules.
 2. In the same database transaction as the assignment, I’d write an outbox event with an event ID, task ID, recipient ID, event type, and the display details the notification needs. I wouldn’t publish the event until the transaction commits.
 3. A dispatcher would read committed outbox rows and deliver notifications. It may retry, so I’d use the event ID to ignore duplicates.
@@ -29,7 +50,7 @@ sequenceDiagram
     participant API as API workflow
     participant DB as PostgreSQL
     participant Worker as Activity worker
-    participant Feed as Activity projection
+    participant Feed as Activity table
     Client->>API: Move task with expectedVersion
     API->>DB: Validate and update task; insert outbox row
     DB-->>API: Commit both changes atomically
@@ -37,6 +58,10 @@ sequenceDiagram
     Worker->>DB: Claim committed outbox row
     Worker->>Feed: Insert activity record idempotently
     Worker->>DB: Mark outbox row processed
+    Client->>API: GET activity feed
+    API->>DB: Check access; read stable page
+    DB-->>API: Authorized activity records
+    API-->>Client: Feed page
 ```
 
 1. **Write with the task change.** In the existing workflow transaction, I’d update the task and insert an immutable outbox record. It would include an event ID, event type, task ID, committed task version, actor ID, timestamp, and only the before/after details needed by the feed. The worker wouldn’t be called until after commit.
@@ -61,6 +86,29 @@ For this app’s current size, I expect the extra database writes and a small wo
 I’d move a card as soon as the user drops it, then reconcile that preview with the server response. The server remains authoritative, and the existing task version and placement/move API can detect stale writes.
 
 ### How I’d handle each response
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant UI as Board UI
+    participant API as Placement workflow
+    participant DB as PostgreSQL
+    User->>UI: Drop card in new position
+    UI->>UI: Save prior columns; show optimistic placement
+    UI->>API: Move task with expectedVersion
+    API->>DB: Check access/config/version; write placement
+    alt Version is current
+        DB-->>API: Commit new placement and version
+        API-->>UI: Confirmed placement and version
+        UI->>UI: Replace preview with server result
+    else Version is stale
+        DB-->>API: Reject without writing
+        API-->>UI: 409 conflict
+        UI->>API: Reload affected board data
+        API-->>UI: Current authorized board
+        UI->>UI: Remove preview; explain conflict
+    end
+```
 
 1. On drop, I’d save the current source and destination columns, move the card in the UI, and show a pending indicator. The request would include the task ID, destination/status/order, and latest version I have.
 2. On success, I’d replace the preview with the server’s response, including its version and position. If the response doesn’t include enough ordering information, I’d reload the affected board.
