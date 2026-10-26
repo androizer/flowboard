@@ -1,6 +1,6 @@
 # Application test plan and coverage
 
-Status: 66 API and 15 browser tests pass in the isolated Compose stack after their TSX conversion. Scenario coverage remains incomplete (141 scenario rows). Navigation: [hub](README.md), [requirements](requirements.md).
+Status (2026-10-26): 66 API tests pass; 15 of 17 browser tests pass in the isolated Compose stack. The added hierarchy creation browser journeys currently fail while opening the Ant Design parent picker, so HIER-11, WEB-18, and WEB-20 remain unverified. A fresh local Compose boot and the documented Render API/web health endpoints returned 200. Navigation: [hub](README.md), [requirements](requirements.md).
 
 ## 1. Scope and meaning
 
@@ -33,9 +33,9 @@ Run `make test` from the repository root. It builds and runs the isolated test s
 
 ## 4. Outstanding coverage
 
-The following scenario rows do not yet have executable tests: AUTH-04, AUTH-14, HIER-11, WEB-18, WEB-19, and WEB-20. AUTH-04 requires an SSO verifier, and AUTH-14 requires credential-maintenance behavior that is not implemented. The browser parent-picker journey for HIER-11/WEB-18/WEB-20 timed out across three attempts; the uncertain assumption is that the test reliably selects newly created parents in the Ant Design picker. WEB-19 is presentation guidance and color consistency; it needs a visual review rather than a superficial visibility assertion.
+The HIER-11/WEB-18/WEB-20 Playwright journeys now exist, but both new journeys fail before parent selection because the test cannot open the Ant Design picker; the uncertain assumption is that the visible picker surface is the click target in this browser setup. Stop further locator changes after three attempts and revisit the interaction with an inspected browser trace. AUTH-04 requires an SSO verifier, AUTH-14 requires credential-maintenance behavior that is not implemented, and WEB-19 is presentation guidance/color consistency that needs visual review rather than a superficial visibility assertion.
 
-RUN-01 and RUN-09 are delivery checks. `make test` passed on 2026-10-22 with the converted TSX suites: 66 API tests and 15 browser tests. A clean startup of the regular development Compose stack remains to be recorded for RUN-01. Several implemented test titles cover only part of a multi-clause scenario; expand them before claiming all 141 rows are complete.
+RUN-01 and RUN-09 are delivery checks. On 2026-10-26, the first test-stack boot exposed a missing `API_UPSTREAM` value in `compose.test.yml`; after adding it, the API suite passed 66/66 and the browser suite passed 15/17. The two hierarchy journey failures are described above. The regular development Compose stack then started from a stopped state; `/health` and `/` returned 200. The documented Render web and API endpoints also returned 200. Several test titles cover only part of a multi-clause scenario; do not claim all 141 rows are complete.
 
 ## 5. Required browser proof and defect handling
 

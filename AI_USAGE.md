@@ -1,5 +1,11 @@
 # AI usage record
 
+## 2026-10-26 — Verification follow-up
+
+- Added a backend assertion that an unknown single-select option is rejected with a `400` field path, and added Alice/Bob browser journeys for creating spaces, folders, and lists with valid/visible parent choices.
+- Fixed the isolated test Compose web service after its first boot showed that Nginx requires `API_UPSTREAM`. The test stack then ran the API suite successfully (66/66); two new UI journeys remain failing at parent-picker opening after three locator approaches, so coverage is recorded as unverified rather than passed.
+- Verified regular Compose startup (`/health` and web `/` returned 200) and the documented Render API/web health roots (both returned 200). The isolated test stack is cleaned by `make test`; local app containers are stopped after verification without removing volumes.
+
 ## 2026-10-26 — Demo deployment path
 
 - The user clarified that a supplied `.env` signing secret should take precedence while preserving generated-file fallback for local use. Updated the initializer and runtime config accordingly, and kept hosted demo seeding independent from Secure-cookie behavior.

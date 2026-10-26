@@ -355,6 +355,11 @@ describe('status and custom-field resolution', () => {
       .send({ ...base, customFields: { effort: 'zero', work_type: id(302) } });
     error(invalid, 400, 'VALIDATION_ERROR');
     expect(invalid.body.error.details[0].path).toBe('customFields.effort');
+    const invalidOption = await as(alice)
+      .post(`/v1/lists/${ids.delivery}/tasks`)
+      .send({ ...base, customFields: { effort: 1, work_type: id(9999) } });
+    error(invalidOption, 400, 'VALIDATION_ERROR');
+    expect(invalidOption.body.error.details[0].path).toBe('customFields.work_type');
   });
 
   test('FIELD-06 TASK-04: omitted answer is preserved and explicit null clears an optional answer', async () => {

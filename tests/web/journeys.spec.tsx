@@ -16,6 +16,30 @@ async function signIn(page: Page, name: string) {
   await expect(page.getByRole('heading', { name: 'Flowboard home' })).toBeVisible();
 }
 
+async function createContainerFromPage(
+  page: Page,
+  type: 'space' | 'folder' | 'list',
+  name: string,
+  parentName?: string,
+) {
+  await page.getByText(`New ${type}`, { exact: true }).click();
+  if (parentName) {
+    const parentType = type === 'folder' ? 'space' : 'folder';
+    const picker = page.getByRole('combobox', { name: `Parent ${parentType}` });
+    await page
+      .locator('.ant-select')
+      .filter({ has: picker })
+      .locator('.ant-select-selector')
+      .click();
+    await page.getByRole('option', { name: parentName, exact: true }).click();
+  }
+  await page.getByLabel(`New ${type} name`).fill(name);
+  await page.getByRole('button', { name: `Create ${type}` }).click();
+  await expect
+    .poll(() => db.container.findFirst({ where: { name }, select: { id: true } }))
+    .not.toBeNull();
+}
+
 test('WEB-01: edit a resolved custom answer and verify the stored value after reopening', async ({
   page,
 }) => {
@@ -332,6 +356,124 @@ test('WEB-21: creator shares an owned list from the UI and recipient gains acces
   await expect(
     page.locator('.workspace-sidebar').getByText('Bob share list', { exact: true }),
   ).toBeVisible();
+});
+
+test('HIER-11 WEB-18: Alice can create each container type with only valid parent types', async ({
+  page,
+}) => {
+  await signIn(page, 'alice');
+  await page
+    .locator('.workspace-sidebar .workspace-home-link')
+    .filter({ hasText: 'Create' })
+    .click();
+
+  await createContainerFromPage(page, 'space', 'Admin journey space');
+  await page.getByText('New folder', { exact: true }).click();
+  const spacePicker = page.getByRole('combobox', { name: 'Parent space' });
+  await page
+    .locator('.ant-select')
+    .filter({ has: spacePicker })
+    .locator('.ant-select-selector')
+    .click();
+  await expect(
+    page.getByRole('option', { name: 'Admin journey space', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('option', { name: 'Q2 Launch', exact: true })).toHaveCount(0);
+  await page.getByRole('option', { name: 'Admin journey space', exact: true }).click();
+  await page.getByLabel('New folder name').fill('Admin journey folder');
+  await page.getByRole('button', { name: 'Create folder' }).click();
+  await expect
+    .poll(() =>
+      db.container.findFirst({ where: { name: 'Admin journey folder' }, select: { id: true } }),
+    )
+    .not.toBeNull();
+
+  await page.getByText('New list', { exact: true }).click();
+  const folderPicker = page.getByRole('combobox', { name: 'Parent folder' });
+  await page
+    .locator('.ant-select')
+    .filter({ has: folderPicker })
+    .locator('.ant-select-selector')
+    .click();
+  await expect(
+    page.getByRole('option', { name: 'Admin journey folder', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('option', { name: 'Admin journey space', exact: true })).toHaveCount(
+    0,
+  );
+  await page.getByRole('option', { name: 'Admin journey folder', exact: true }).click();
+  await page.getByLabel('New list name').fill('Admin journey list');
+  await page.getByRole('button', { name: 'Create list' }).click();
+  await expect
+    .poll(() =>
+      db.container.findFirst({ where: { name: 'Admin journey list' }, select: { id: true } }),
+    )
+    .not.toBeNull();
+
+  const list = await db.container.findFirst({ where: { name: 'Admin journey list' } });
+  const folder = await db.container.findFirst({ where: { name: 'Admin journey folder' } });
+  expect(list.parentContainerId).toBe(folder.id);
+  expect(folder.parentContainerId).toBe(
+    (await db.container.findFirst({ where: { name: 'Admin journey space' } })).id,
+  );
+});
+
+test('HIER-11 WEB-18 WEB-20: Bob creates a space, folder, and list from accessible parent choices', async ({
+  page,
+}) => {
+  await signIn(page, 'bob');
+  await expect(page.getByRole('button', { name: 'Admin', exact: true })).toHaveCount(0);
+  await page
+    .locator('.workspace-sidebar .workspace-home-link')
+    .filter({ hasText: 'Create' })
+    .click();
+
+  await createContainerFromPage(page, 'space', 'Bob journey space');
+  await page.getByText('New folder', { exact: true }).click();
+  const spacePicker = page.getByRole('combobox', { name: 'Parent space' });
+  await page
+    .locator('.ant-select')
+    .filter({ has: spacePicker })
+    .locator('.ant-select-selector')
+    .click();
+  await expect(page.getByRole('option', { name: 'Bob journey space', exact: true })).toBeVisible();
+  await expect(page.getByRole('option', { name: 'Engineering', exact: true })).toBeVisible();
+  await expect(page.getByRole('option', { name: 'Product', exact: true })).toHaveCount(0);
+  await page.getByRole('option', { name: 'Bob journey space', exact: true }).click();
+  await page.getByLabel('New folder name').fill('Bob journey folder');
+  await page.getByRole('button', { name: 'Create folder' }).click();
+  await expect
+    .poll(() =>
+      db.container.findFirst({ where: { name: 'Bob journey folder' }, select: { id: true } }),
+    )
+    .not.toBeNull();
+
+  await page.getByText('New list', { exact: true }).click();
+  const folderPicker = page.getByRole('combobox', { name: 'Parent folder' });
+  await page
+    .locator('.ant-select')
+    .filter({ has: folderPicker })
+    .locator('.ant-select-selector')
+    .click();
+  await expect(page.getByRole('option', { name: 'Bob journey folder', exact: true })).toBeVisible();
+  await expect(page.getByRole('option', { name: 'Strategy', exact: true })).toHaveCount(0);
+  await page.getByRole('option', { name: 'Bob journey folder', exact: true }).click();
+  await page.getByLabel('New list name').fill('Bob journey list');
+  await page.getByRole('button', { name: 'Create list' }).click();
+  await expect
+    .poll(() =>
+      db.container.findFirst({ where: { name: 'Bob journey list' }, select: { id: true } }),
+    )
+    .not.toBeNull();
+
+  const created = await db.container.findMany({
+    where: { name: { in: ['Bob journey space', 'Bob journey folder', 'Bob journey list'] } },
+  });
+  expect(created).toHaveLength(3);
+  expect(created.every((node) => node.createdByUserId === ids.bob)).toBe(true);
+  expect(
+    (await db.container.findFirst({ where: { name: 'Bob journey list' } })).parentContainerId,
+  ).toBe((await db.container.findFirst({ where: { name: 'Bob journey folder' } })).id);
 });
 
 test('WEB-07: task form preserves zero and false custom answers', async ({ page }) => {
