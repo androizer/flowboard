@@ -5,7 +5,8 @@ import fs from 'node:fs';
 export const config = () => {
   const file = process.env.JWT_SECRET_FILE;
   const secret =
-    file && fs.existsSync(file) ? fs.readFileSync(file, 'utf8').trim() : process.env.JWT_SECRET;
+    process.env.JWT_SECRET ||
+    (file && fs.existsSync(file) ? fs.readFileSync(file, 'utf8').trim() : undefined);
   if (!secret || Buffer.from(secret).length < 32)
     throw new Error('JWT signing material is missing or too short.');
   return {
@@ -13,6 +14,7 @@ export const config = () => {
     issuer: process.env.JWT_ISSUER ?? 'flowboard-local',
     audience: process.env.JWT_AUDIENCE ?? 'flowboard-web',
     demoMode: process.env.FLOWBOARD_DEMO_MODE === 'true',
+    secureCookies: process.env.COOKIE_SECURE === 'true',
     webOrigin: process.env.WEB_ORIGIN ?? 'http://localhost:8080',
   };
 };

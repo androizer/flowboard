@@ -40,7 +40,7 @@ async function main() {
     >`SELECT version FROM seed_markers WHERE version = 'day-1-v1'`;
     if (applied.length) return;
     await tx.workspace.create({ data: { id: workspace, name: 'Flowboard' } });
-    const password = process.env.SEED_PASSWORD ?? 'FlowboardDemo!2026';
+    const password = process.env.SEED_PASSWORD!;
     const passwordHash = await argon2.hash(password, {
       type: argon2.argon2id,
       memoryCost: 19456,

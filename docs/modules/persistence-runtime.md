@@ -14,13 +14,14 @@ This library owns connection/transaction infrastructure and bootstrap tooling, n
 
 | Runtime component | Behavior                                                                                             |
 | ----------------- | ---------------------------------------------------------------------------------------------------- |
-| web               | Build React/Vite; serve static UI and proxy `/v1` to API; port 8080.                                 |
-| api               | Run NestJS on 3000 after bootstrap; same endpoints for browser and cookbook.                         |
+| web               | Build React/Vite; serve static UI and proxy `/v1` to `API_UPSTREAM`; port 8080. Compose defaults upstream to `api:3000`; hosted demo uses the API's HTTPS URL. |
+| api               | Run NestJS after bootstrap; port is configured by `PORT` (3000 in Compose, Render's assigned port when hosted).                         |
 | db                | PostgreSQL on internal network, persistent named data volume; no required public DB port.            |
-| Signing material  | Local-demo named secret volume; generated once with restrictive permissions and not logged.          |
-| Production        | Provision shared signing material; disable demo seeding; HTTPS/Secure-cookie configuration required. |
+| Signing material  | Use non-empty `JWT_SECRET` when supplied; otherwise read/generate the local-demo named secret file. Never log it. |
+| Hosted demo       | Render web/API Docker services, Neon PostgreSQL, explicit HTTPS origin, managed JWT secret, secure cookies, and disabled automatic deploys. GitHub release creation is inert; use the manual deploy workflow. |
+| Production        | Provision stable shared signing material, disable demo seeding, and require HTTPS/Secure-cookie configuration. |
 
-The supported command is `docker compose up --build`. Include `.env.example`, pinned tooling/lockfile, immutable installs, and multi-stage images. Local-demo is an explicit runtime setting, separate from NODE_ENV, so an optimized Docker build is still a local demo. No actual production keys/passwords are committed. A developer may opt into loopback-only database-client access through an untracked Compose override; the root README owns the exact local setup and connection values.
+The supported local command is `docker compose up --build`. Include `.env.example`, pinned tooling/lockfile, immutable installs, and multi-stage images. Local-demo seeding is an explicit runtime setting, separate from NODE_ENV, so an optimized Docker build is still a local demo. `COOKIE_SECURE` separately selects HTTPS-only refresh cookies. A supplied `JWT_SECRET` takes precedence over the generated file; Compose passes it from `.env` when configured. No actual production keys/passwords are committed. A developer may opt into loopback-only database-client access through an untracked Compose override; the root README owns the exact local setup and connection values.
 
 | Schema concern       | Rule                                                                                                                                                               |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -133,5 +134,6 @@ Build Compose, schema/constraints, signing bootstrap, and seed in Day 1; share t
 | RUN-07 | Non-demo startup skips seed; production missing keys or demo-seed enabled -> fail closed; no secret in logs/artifacts.       |
 | RUN-08 | Board response under config write -> internally consistent snapshot; no cross-request snapshot promise.                      |
 | RUN-09 | Final test command -> PostgreSQL-backed backend tests and browser tests run without host tooling.                            |
+| RUN-10 | Set `JWT_SECRET` while a generated file exists -> environment value wins; unset/empty value -> generated file fallback remains; short secret -> startup fails without logging it. |
 
 When changing startup, constraints, or lock order, update runtime, affected owner docs, [ADR-0005](../adr/0005-delivery-and-consistency.md), `.env.example`/Compose/migrations when code exists, and clean-run TODOs. API processes are stateless with database-backed sessions; future replicas share keys and need shared throttling and a single migration job.

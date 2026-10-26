@@ -1,0 +1,46 @@
+services:
+  - type: web
+    name: flowboard-demo-api
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerContext: .
+    dockerfilePath: ./apps/api/Dockerfile
+    autoDeployTrigger: off
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "10000"
+      - key: DATABASE_URL
+        sync: false
+      - key: WEB_ORIGIN
+        sync: false
+      - key: FLOWBOARD_DEMO_MODE
+        value: "true"
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: JWT_ISSUER
+        value: flowboard-demo
+      - key: JWT_AUDIENCE
+        value: flowboard-web
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SEED_PASSWORD
+        sync: false
+
+  - type: web
+    name: flowboard-demo-web
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerContext: .
+    dockerfilePath: ./apps/web/Dockerfile
+    autoDeployTrigger: off
+    envVars:
+      - key: PORT
+        value: "8080"
+      - key: API_UPSTREAM
+        fromService:
+          name: flowboard-demo-api
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL

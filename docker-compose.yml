@@ -25,7 +25,9 @@ services:
       FLOWBOARD_DEMO_MODE: 'true'
       JWT_ISSUER: flowboard-local
       JWT_AUDIENCE: flowboard-web
+      JWT_SECRET: ${JWT_SECRET:-}
       JWT_SECRET_FILE: /run/flowboard-secrets/jwt-secret
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
       SEED_PASSWORD: ${SEED_PASSWORD:-FlowboardDemo!2026}
     depends_on:
       db:
@@ -41,6 +43,8 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
     depends_on: [api]
+    environment:
+      API_UPSTREAM: ${API_UPSTREAM:-http://api:3000}
     ports: ['8080:8080']
     networks: [edge]
 

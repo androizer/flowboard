@@ -14,6 +14,8 @@ Local and future SSO verifiers produce the same VerifiedSignIn pair before one s
 
 Session revocation is the token-family revocation source. REFRESH_TOKENS records hashes, consumption, expiry, and predecessor history; no token-level revoked_at column or separate family table is added. Exact reference columns live in the identity guide.
 
+The JWT signing secret comes from `JWT_SECRET` when configured; otherwise local startup reads or generates the secret file. Refresh-cookie `Secure` behavior is controlled separately by `COOKIE_SECURE`, so hosted demo seeding can remain enabled while cookies still require HTTPS.
+
 ## Why
 
 Adding a sign-in method changes identity proof, not task references or business permissions. One session service avoids parallel logout/renewal behavior. The database prevents mixing one user's session with another user's login identity. Hashes protect stored refresh secrets; current membership checks keep authorization independent from tokens.

@@ -101,7 +101,7 @@ These are protected reference decisions, not optional implementation suggestions
 | Password            | Argon2id library; at least 19 MiB, 2 iterations, parallelism 1; encoded hashes support later rehashing.                           |
 | Refresh secret      | At least 256 random bits; store SHA-256 hash only; expiry cannot exceed session deadline.                                         |
 | Browser             | Access token in memory; host-only HttpOnly refresh cookie, SameSite=Strict, path `/v1/auth`.                                      |
-| Transport           | HTTPS/Secure cookie in production; explicit local-demo mode supports Compose HTTP.                                                |
+| Transport           | HTTPS and Secure cookie when `COOKIE_SECURE=true`; Compose sets it false for local HTTP. Demo seeding is independent of cookie transport. |
 
 No raw password/token/cookie/Authorization header is logged. No tokens persist in localStorage. No access-token table is needed. See [OWASP password guidance](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html) and [RFC 9700](https://www.rfc-editor.org/rfc/rfc9700.html).
 
@@ -284,6 +284,7 @@ Build during Day 1: owned schema/constraints, seeded credentials/local identitie
 | AUTH-13 | Untrusted/missing Origin on cookie-sensitive mutations -> 403; cookie attributes and local/prod modes match policy. |
 | AUTH-14 | Credential maintenance -> timestamp update and local-session revocation are atomic.                                 |
 | AUTH-15 | Reference schema inspection -> exact auth columns; user-owned credential key; no token revoked_at.                  |
+| AUTH-16 | `COOKIE_SECURE` controls refresh-cookie Secure independently of demo seed mode; hosted HTTPS demo sets it true.      |
 
 Browser cross-tab refresh, cache clearing, and identity-change replay rules are owned by [web](web-client.md). Signing material and seed constraints are owned by [runtime](persistence-runtime.md).
 

@@ -1,6 +1,6 @@
 # Application test plan and coverage
 
-Status: 66 API and 15 browser tests pass in the isolated Compose stack after their TSX conversion. Scenario coverage remains incomplete. Navigation: [hub](README.md), [requirements](requirements.md).
+Status: 66 API and 15 browser tests pass in the isolated Compose stack after their TSX conversion. Scenario coverage remains incomplete (141 scenario rows). Navigation: [hub](README.md), [requirements](requirements.md).
 
 ## 1. Scope and meaning
 
@@ -8,20 +8,20 @@ The scenario rows in each module are the coverage target. The runnable `.tsx` su
 
 Each module owns its detailed scenario rows. This page indexes them without duplicating their expected behavior. When rules change, update the owner scenarios and this index only if the group changes.
 
-The plan has 139 scenario rows, not a requirement for 139 separate test files. Parameterized tests and shared fixtures can cover related rows. Preserve observable outcomes instead of mirroring internal implementation details.
+The plan has 141 scenario rows, not a requirement for 141 separate test files. Parameterized tests and shared fixtures can cover related rows. Preserve observable outcomes instead of mirroring internal implementation details.
 
 ## 2. Scenario owners
 
 | Group                       | Owner and setup/action/outcome details    | Priority                                                         |
 | --------------------------- | ----------------------------------------- | ---------------------------------------------------------------- |
-| AUTH-01 through AUTH-15     | [Identity](modules/identity.md)           | Required: login/session/rotation/revocation/reference invariants |
+| AUTH-01 through AUTH-16     | [Identity](modules/identity.md)           | Required: login/session/rotation/revocation/reference invariants |
 | HIER-01 through HIER-13     | [Hierarchy](modules/hierarchy.md)         | Required: tree/type/scope/archive/order/member creation          |
 | PERM-01 through PERM-16     | [Permissions](modules/permissions.md)     | Required: role/grant/tree/direct URL consistency                 |
 | STATUS-01 through STATUS-13 | [Statuses](modules/statuses.md)           | Required: inheritance/sibling columns/config safety              |
 | FIELD-01 through FIELD-14   | [Custom fields](modules/custom-fields.md) | Required: six types/required/options/migration safety            |
 | TASK-01 through TASK-11     | [Tasks](modules/tasks.md)                 | Required: task/assignment/value/version/order                    |
 | FLOW-01 through FLOW-14     | [Workflows](modules/workflows.md)         | Required: atomic move/config/race/container creation             |
-| RUN-01 through RUN-09       | [Runtime](modules/persistence-runtime.md) | Required: real PostgreSQL/Docker/seed/constraints                |
+| RUN-01 through RUN-10       | [Runtime](modules/persistence-runtime.md) | Required: real PostgreSQL/Docker/seed/constraints                |
 | WEB-01 through WEB-22       | [Web](modules/web-client.md)              | Required: browser journey and identity cleanup                   |
 | API-01 through API-12       | [API/contracts](modules/api-contracts.md) | Required: standardized API and channel agreement                 |
 
@@ -35,7 +35,7 @@ Run `make test` from the repository root. It builds and runs the isolated test s
 
 The following scenario rows do not yet have executable tests: AUTH-04, AUTH-14, HIER-11, WEB-18, WEB-19, and WEB-20. AUTH-04 requires an SSO verifier, and AUTH-14 requires credential-maintenance behavior that is not implemented. The browser parent-picker journey for HIER-11/WEB-18/WEB-20 timed out across three attempts; the uncertain assumption is that the test reliably selects newly created parents in the Ant Design picker. WEB-19 is presentation guidance and color consistency; it needs a visual review rather than a superficial visibility assertion.
 
-RUN-01 and RUN-09 are delivery checks. `make test` passed on 2026-10-22 with the converted TSX suites: 66 API tests and 15 browser tests. A clean startup of the regular development Compose stack remains to be recorded for RUN-01. Several implemented test titles cover only part of a multi-clause scenario; expand them before claiming all 139 rows are complete.
+RUN-01 and RUN-09 are delivery checks. `make test` passed on 2026-10-22 with the converted TSX suites: 66 API tests and 15 browser tests. A clean startup of the regular development Compose stack remains to be recorded for RUN-01. Several implemented test titles cover only part of a multi-clause scenario; expand them before claiming all 141 rows are complete.
 
 ## 5. Required browser proof and defect handling
 

@@ -23,6 +23,8 @@ Demo accounts use `FlowboardDemo!2026` by default: `alice@flowboard.com`, `bob@f
 
 Stop the services with `Ctrl+C`, or run `docker compose down`. To also remove the local database volume and its data, run `docker compose down -v`.
 
+For an optional short-lived hosted demo using Render and Neon, see the [deployment guide](docs/deployment.md).
+
 ## Connect a local database client
 
 PostgreSQL stays on Compose's internal network by default. To connect a desktop database client, create an untracked `compose.override.yml` in the repository root:

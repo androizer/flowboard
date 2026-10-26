@@ -8,5 +8,6 @@ RUN yarn install --frozen-lockfile || yarn install
 COPY . .
 RUN yarn workspace @flowboard/web build
 FROM nginx:1.27-alpine
-COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
+ENV NGINX_ENVSUBST_FILTER=^(API_UPSTREAM)$
+COPY apps/web/nginx.conf /etc/nginx/templates/default.conf.template
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html

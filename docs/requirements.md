@@ -21,7 +21,7 @@ The [assignment requirements](flowboard-module.md) define required behavior. Sec
 | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------- |
 | REQ-DESIGN  | Architecture, trust boundaries, board/drag flow, config location; Engineering expectations §1                                            | [Architecture](architecture.md), [workflows](modules/workflows.md)         | FLOW-01, FLOW-06, FLOW-08             |
 | REQ-API     | Versioned standardized API, errors, pagination, Swagger/table; Engineering expectations §2                                               | [API/contracts](modules/api-contracts.md)                                  | API-01 through API-12                 |
-| REQ-AUTH    | Real auth boundary, server-resolved role, 401/403, production extension; Engineering expectations §3                                     | [Identity](modules/identity.md)                                            | AUTH-01 through AUTH-15               |
+| REQ-AUTH    | Real auth boundary, server-resolved role, 401/403, production extension; Engineering expectations §3                                     | [Identity](modules/identity.md)                                            | AUTH-01 through AUTH-16               |
 | REQ-CHANNEL | Web and curl share `/v1`, auth, contracts, and domain behavior; future CLI/webhooks are design placeholders; Engineering expectations §4 | [API/cookbook](modules/api-contracts.md), [architecture](architecture.md)  | API-01, API-06, API-07                |
 | REQ-SCALE   | Boundaries, stateless API, indexes, extraction and IPC failure story; Engineering expectations §§5–6                                     | [Architecture](architecture.md), [runtime](modules/persistence-runtime.md) | RUN-04 through RUN-08; ADR review     |
 | REQ-DOCKER  | One-command Docker run, env example, bootstrap/seed; Engineering expectations §7 and Deliverables                                        | [Runtime](modules/persistence-runtime.md)                                  | RUN-01 through RUN-03, RUN-07, RUN-09 |
@@ -40,12 +40,13 @@ The [assignment requirements](flowboard-module.md) define required behavior. Sec
 | USER-TEST   | Record scenarios first; implement after feature freeze                                                                                   | [Test plan](test-plan.md), [ADR-0005](adr/0005-delivery-and-consistency.md)                |
 | USER-SAFETY | Complete replacement status sets, additive fields, ancestor-aware access, reject unsafe changes                                          | [ADR-0002](adr/0002-hierarchy-and-access.md), [ADR-0003](adr/0003-scoped-configuration.md) |
 | USER-HOME   | Work overview replaces Backlog as the post-login landing; show live permission-filtered counts, accessible lists, and upcoming due dates | [Web](modules/web-client.md), [API](modules/api-contracts.md)                              |
+| USER-DEMO   | Optional Render/Neon demo; release creation is inert and a manual GitHub workflow selects release and service(s) | [Deployment](deployment.md), [ADR-0005](adr/0005-delivery-and-consistency.md) |
 
 ## 4. Boundaries and deferred work
 
 Single workspace/tenant; seeded users; no signup, billing, email, uploads, or mobile-first requirement. React and Node satisfy the allowed frontend/backend choices. Workspace is the fixed seeded root; space/folder/list CRUD provides the mutable container hierarchy.
 
-No stretch feature is scheduled. The assignment permits at most two after the required MVP is solid. Search, custom filters, optimistic conflict UI, activity/async worker, bulk changes, live updates, generated clients, hosted deployment, webhooks, a thin CLI, and one-level subtasks remain future work. An SSO adapter is designed/test-doubled, not a claimed implemented provider.
+No stretch feature is scheduled. The assignment permits at most two after the required MVP is solid. The user has selected a short-lived hosted demo as delivery support; it is not a production deployment claim. Search, custom filters, optimistic conflict UI, activity/async worker, bulk changes, live updates, generated clients, production hosting, webhooks, a thin CLI, and one-level subtasks remain future work. An SSO adapter is designed/test-doubled, not a claimed implemented provider.
 
 ## 5. How to use this page
 

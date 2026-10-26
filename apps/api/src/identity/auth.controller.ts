@@ -32,7 +32,7 @@ export class AuthController {
     res.cookie(refreshCookie, token, {
       httpOnly: true,
       sameSite: 'strict',
-      secure: !config().demoMode,
+      secure: config().secureCookies,
       path: '/v1/auth',
       expires,
     });
@@ -41,7 +41,7 @@ export class AuthController {
     res.clearCookie(refreshCookie, {
       httpOnly: true,
       sameSite: 'strict',
-      secure: !config().demoMode,
+      secure: config().secureCookies,
       path: '/v1/auth',
     });
   }

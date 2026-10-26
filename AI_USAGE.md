@@ -1,5 +1,10 @@
 # AI usage record
 
+## 2026-10-26 — Demo deployment path
+
+- The user clarified that a supplied `.env` signing secret should take precedence while preserving generated-file fallback for local use. Updated the initializer and runtime config accordingly, and kept hosted demo seeding independent from Secure-cookie behavior.
+- Added a Render/Neon demo Blueprint and a manually dispatched release workflow. Creating a GitHub release does not trigger a deploy; the workflow pins Render deploy-hook requests to the selected release commit and service choice.
+
 ## 2026-10-22 — Application test implementation
 
 - Added isolated PostgreSQL-backed API tests and Playwright browser journeys for the documented domain scenarios. The test runner guards against a non-test database URL, resets fixtures between cases, and runs through a separate Docker Compose project.
