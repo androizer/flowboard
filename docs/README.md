@@ -11,6 +11,7 @@ Use this page to find the design and behavior details that do not belong in the 
 | Application scenarios, runnable suites, and coverage gaps | [Test plan](test-plan.md)                   |
 | Web performance as data grows                             | [Web performance guide](web-performance.md) |
 | Optional hosted demo and manual release deployments        | [Deployment guide](deployment.md)            |
+| Optional real-time, activity, and board interaction work  | [Stretch goals](stretch-goals.md)            |
 | Shared project vocabulary                                 | [Glossary](glossary.md)                     |
 
 ## System design

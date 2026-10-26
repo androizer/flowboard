@@ -90,6 +90,8 @@ The API is designed to be stateless across requests, with PostgreSQL as shared s
 
 To keep the MVP focused, bulk edits, search, live updates, and a separate CLI were cut. Application tests are documented in the [test plan](docs/test-plan.md); API and channel details are in the [contract guide](docs/modules/api-contracts.md). Measure tree and board query load before adding infrastructure or extracting activity/search processing. More on current limits and IPC options is in [ADR-0005](docs/adr/0005-delivery-and-consistency.md).
 
+Optional next steps are documented in [stretch goals](docs/stretch-goals.md): SSE assignment notifications, an asynchronously built activity feed, and optimistic drag-and-drop with conflict recovery.
+
 ## Checks
 
 ```bash
@@ -108,5 +110,6 @@ The [`docs/`](docs/README.md) directory is the reference for deeper project desi
 - **Decisions:** ADRs that explain key design choices.
 - **Modules:** focused guides for each part of the application.
 - **Reference:** glossary and documentation change guide.
+- **Optional work:** proposed stretch goals and implementation approach.
 
 Use the [documentation hub](docs/README.md) to find a specific guide.

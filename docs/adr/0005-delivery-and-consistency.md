@@ -4,17 +4,17 @@ Status: accepted for planned MVP. Owners: [workflows](../modules/workflows.md), 
 
 ## Context
 
-Moves and config edits span several owners. Reviewers should run the application from a Docker-only machine. The user wants test scenarios written during development and implemented after feature freeze.
+Moves and config edits span several owners. I want reviewers to be able to run the application with Docker alone. I also want to document test scenarios during development, then implement them after the feature freeze.
 
 ## Decision
 
-Use versioned REST, one error envelope, offset/limit collection pages, Swagger, and a real-login curl cookbook. The user deferred the cookbook/second-channel implementation from Day 3; the HTTP boundary remains the planned design and assignment proof is pending. Domain writes lock the workspace row and recheck membership/access/config inside the transaction. Task versions detect stale edits. Board configuration/tasks use one consistent snapshot. Auth rotation uses session/token locks separately.
+Use versioned REST, one error envelope, offset/limit collection pages, Swagger, and a real-login curl cookbook. I deferred the cookbook and second-channel verification during Day 3, so that assignment evidence is still pending. Domain writes lock the workspace row and recheck membership, access, and configuration inside the transaction. Task versions detect stale edits. Board configuration and tasks use one consistent snapshot. Auth rotation uses separate session and token locks.
 
 Run web/API/PostgreSQL locally with one Compose command, persistent data, idempotent seeds, and generated signing material unless a local `JWT_SECRET` is supplied. The optional short-lived hosted demo uses separate Render Docker services and Neon PostgreSQL. Render automatic deploys stay off; a manually dispatched GitHub Actions workflow targets a selected GitHub release tag and API, web, or both services. Release creation itself does not deploy. Record application test TODOs first, then implement required cases after Day 3 freeze. Static/documentation/build checks can run throughout.
 
 ## Why
 
-Small-scale serialization is easy to explain and prevents validation/write races. The HTTP contract works across browser and curl. Docker and deterministic data make reviewer behavior reproducible. Delaying executable tests follows the user's selected development process without removing submission tests.
+Workspace-level serialization is easy to explain and prevents validation/write races at this scale. The HTTP contract works for both the browser and curl. Docker and deterministic data make the review setup reproducible. Writing test scenarios before implementing them keeps the development schedule clear without dropping the required tests.
 
 ## Alternatives and consequences
 

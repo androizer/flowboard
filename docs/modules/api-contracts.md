@@ -77,7 +77,7 @@ Shared contracts declare request/response types, enums, pagination/error/Actor-r
 
 ### Secondary client boundary
 
-The task/board/admin routes are designed for any HTTP client: a client signs in through `/v1/auth/login`, sends the returned Flowboard access token as a Bearer token, and reads or mutates the same `/v1` resources as the web UI. The user deferred implementing the second channel during Day 3. The curl cookbook and runtime parity proof are therefore pending, and the assignment's second-channel evidence is not yet satisfied. A future CLI is an HTTP client only; it must not import NestJS/domain repositories, bypass workflows, or require CLI-specific business endpoints.
+The task, board, and admin routes work with any HTTP client. A client signs in through `/v1/auth/login`, sends the Flowboard access token as a Bearer token, and uses the same `/v1` resources as the web UI. The curl cookbook and browser/curl parity check are still pending, so the assignment's second-channel requirement is not complete. A future CLI would also use HTTP; it must not import NestJS or domain repositories, bypass workflows, or add CLI-specific business endpoints.
 
 For refresh and logout, a non-browser client can retain the issued refresh cookie in a cookie jar and send the configured allowed Origin on cookie-sensitive auth requests, following the existing identity contract. It receives the same status codes and error envelope as the browser. This is a client transport detail, not a separate credential or session model. The shared contracts and Swagger examples should describe the HTTP exchange without assuming React component state.
 

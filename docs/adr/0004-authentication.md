@@ -4,7 +4,7 @@ Status: accepted for planned MVP. Owner: [identity and authentication](../module
 
 ## Context
 
-The user selected real local login with JWT and refresh tokens, while requiring a simple future SSO extension. The original reference diagrams must remain consistent with the implementation plan.
+I chose local login with JWT access tokens and rotating refresh tokens, while leaving room for a future SSO provider. The reference diagrams also need to match that design.
 
 ## Decision
 
@@ -27,7 +27,7 @@ Adding a sign-in method changes identity proof, not task references or business 
 | Credentials owned by AUTH_IDENTITIES   | Contradicts the accepted user-owned credential ER.                     |
 | Direct provider tokens for domain APIs | Moves provider coupling into all API authentication paths.             |
 | Stateless JWTs without session checks  | Existing tokens cannot be revoked immediately on logout/replay.        |
-| Cookie session only                    | Simpler, but JWT plus rotating refresh tokens was explicitly selected. |
+| Cookie session only                    | Simpler, but I chose JWTs with rotating refresh tokens.                |
 
 Strict replay handling can revoke a session after an ambiguous network failure or simultaneous token reuse. The client serializes refresh and does not blindly retry it. The extra session lookup and database history are intentional costs. Four-day delivery is tighter than with mock identity.
 

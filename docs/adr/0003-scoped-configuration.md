@@ -4,7 +4,7 @@ Status: accepted for planned MVP. Owners: [statuses](../modules/statuses.md), [c
 
 ## Context
 
-Two lists under one folder may need different columns, and custom fields can be defined higher in the tree. Moves and config edits can invalidate existing tasks. The developer selected predictable replacement/addition behavior over automatic migration.
+Two lists under one folder may need different columns, and custom fields can be defined higher in the tree. Moves and config edits can invalidate existing tasks. I chose predictable replacement and addition rules instead of trying to migrate existing tasks automatically.
 
 ## Decision
 

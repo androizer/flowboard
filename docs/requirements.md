@@ -2,7 +2,7 @@
 
 Navigation: [hub](README.md), [test plan](test-plan.md).
 
-The [assignment requirements](flowboard-module.md) define required behavior. Section references below point to its headings, not new requirements invented by implementation. Local password/JWT/refresh authentication is an explicitly chosen addition replacing the assignment's permitted mock identity. Admin and move flows have code and manual runtime review; executable application tests remain TODOs.
+The [assignment requirements](flowboard-module.md) define the required behavior. This page maps those sections to their owning guides and acceptance cases. I chose local password/JWT/refresh authentication instead of the mock identity allowed by the assignment. Admin and move flows have code and manual runtime review; executable application tests remain TODOs.
 
 ## 1. Required product surface
 
@@ -30,7 +30,7 @@ The [assignment requirements](flowboard-module.md) define required behavior. Sec
 | REQ-DOC     | Run, design, model, API, auth/channel, scale/IPC, trade-offs/AI log; Must-have requirements §9                                           | [Hub](README.md)                                                           | Documentation gate                    |
 | REQ-SUBMIT  | Git source, Compose/env, README, 4–6 minute demo; Deliverables                                                                           | [Project README](../README.md)                                             | Final submission checklist            |
 
-## 3. User-selected additions and defaults
+## 3. Project choices and defaults
 
 | ID          | Decision                                                                                                                                 | Specification                                                                              |
 | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
@@ -46,7 +46,7 @@ The [assignment requirements](flowboard-module.md) define required behavior. Sec
 
 Single workspace/tenant; seeded users; no signup, billing, email, uploads, or mobile-first requirement. React and Node satisfy the allowed frontend/backend choices. Workspace is the fixed seeded root; space/folder/list CRUD provides the mutable container hierarchy.
 
-No stretch feature is scheduled. The assignment permits at most two after the required MVP is solid. The user has selected a short-lived hosted demo as delivery support; it is not a production deployment claim. Search, custom filters, optimistic conflict UI, activity/async worker, bulk changes, live updates, generated clients, production hosting, webhooks, a thin CLI, and one-level subtasks remain future work. An SSO adapter is designed/test-doubled, not a claimed implemented provider.
+I haven't scheduled another stretch feature yet; the assignment allows at most two once the required MVP is solid. I’ve completed the short-lived hosted demo and OpenAI Swagger client. The hosted demo is for review, not a production deployment. Search, custom filters, optimistic conflict handling, an activity feed/worker, SSE notifications, bulk changes, webhooks, a thin CLI, and one-level subtasks are still future work. I’ve outlined three of those options in the [stretch-goals document](stretch-goals.md). The SSO adapter is designed and test-doubled, but no provider is integrated.
 
 ## 5. How to use this page
 

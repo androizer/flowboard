@@ -4,7 +4,7 @@ Status: accepted for planned MVP. Owners: [architecture](../architecture.md), [w
 
 ## Context
 
-The assignment is small enough for one API but has real domain rules. AI-generated CRUD can mix those rules into unrelated controllers unless ownership is explicit. The developer already knows Ant Design and Nx.
+The project fits in one API, but its domain rules still need clear boundaries. Keeping ownership explicit helps prevent those rules from spreading across controllers. I was already familiar with Ant Design and Nx, so they were a practical fit for the web app and workspace tooling.
 
 ## Decision
 
