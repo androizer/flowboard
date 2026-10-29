@@ -1,5 +1,11 @@
 # AI usage record
 
+## 2026-10-28 — Workflow request DTO and Swagger schemas
+
+- Replaced `unknown` workflow controller request-body types with explicit DTO classes and Swagger property metadata. The DTOs describe transport shapes; existing workflow services continue to enforce domain rules, including nested status, field, task value, and ID validation.
+- Dynamic `customFields` are represented as arbitrary-key objects because accepted keys and value types come from resolved per-list field configuration. The user asked why bodies were unknown: these service-facing inputs were intentionally broad for manual validation, but using that type at the controller boundary prevented Swagger reflection and compile-time request typing.
+- Added Swagger property metadata and examples to `LoginDto`, preserving its existing class-validator constraints so the login request body appears with named fields and bounds in the generated API docs.
+
 ## 2026-10-26 — Verification follow-up
 
 - Added a backend assertion that an unknown single-select option is rejected with a `400` field path, and added Alice/Bob browser journeys for creating spaces, folders, and lists with valid/visible parent choices.

@@ -50,6 +50,8 @@ Domain HTTP handlers call workflows. Workflows return transport-safe projections
 
 Board responses contain a complete resolved status/field configuration plus a task page. The web client loads all pages for the small selected-list dataset. Each page is internally consistent; if later pages reveal incompatible config or failed validation, discard/refetch rather than combine contradictory data. We do not claim one database snapshot persists across separate HTTP requests.
 
+Workflow controller request bodies use concrete DTO classes for TypeScript and Swagger schemas. The DTO layer documents transport fields; workflow services remain the authority for domain and nested-value validation, including values whose schema depends on a list's resolved fields.
+
 The overview read starts one repeatable-read snapshot, obtains the permission-filtered active tree, passes only its list IDs to Tasks, and combines per-list counts with the five nearest future-due task summaries. Tasks owns the underlying task queries. A mismatched workspace ID is unavailable. The snapshot prevents a count from contradicting the list/item data within one response; later navigation fetches fresh data.
 
 ## 4. Workflows and sequence diagrams

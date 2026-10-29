@@ -1,6 +1,6 @@
 # Module: API and contracts
 
-Status: Day 2 task/read routes and Day 3 admin routes added. Swagger route metadata and the second-channel curl cookbook remain deferred by user direction; runtime verification pending. Code owners: `libs/shared/contracts` and NestJS HTTP adapters. Navigation: [hub](../README.md), [ADR-0005](../adr/0005-delivery-and-consistency.md), [workflows](workflows.md).
+Status: Day 2 task/read routes and Day 3 admin routes added. Workflow request DTOs now provide Swagger body schemas; the second-channel curl cookbook remains deferred. Runtime verification pending. Code owners: `libs/shared/contracts` and NestJS HTTP adapters. Navigation: [hub](../README.md), [ADR-0005](../adr/0005-delivery-and-consistency.md), [workflows](workflows.md).
 
 ## 1. Purpose and example
 
@@ -73,7 +73,9 @@ Container creation is available to active members: a space uses null parentId, w
 
 Day 3 admin request shapes: container create accepts `{ parentId, type, name, visibility? }`; a reorder accepts `{ parentId, ids }` with every active sibling exactly once. Status PUT accepts an ordered `{ statuses: [{ key, name, category, color }] }` complete set. Field create/PATCH accepts `{ key, name, type, required, options }`, with ordered options `{ id?, label, color }`; an existing field key is immutable, and an existing option ID must belong to that field. Grant PUT accepts `{ mode: "allow" | "deny" }`. A status-set GET returns `local` and `inherited`; `local: null` means the selected owner has no override.
 
-Shared contracts declare request/response types, enums, pagination/error/Actor-related common types without runtime provider or ORM dependencies. Controllers parse route UUIDs; workflows whitelist Day 3 JSON candidates and call the owner validators. Complete typed DTO and Swagger metadata remain follow-up work. The web imports contracts and calls HTTP, never backend functions.
+Authentication and workflow request bodies use concrete DTO classes with Swagger property metadata. DTOs describe transport shapes and preserve compile-time types; auth DTOs also carry class-validator constraints, while workflow services remain responsible for domain validation and reject unsupported nested properties. Dynamic task `customFields` values are documented as an object with arbitrary keys because their valid values depend on the resolved field schema.
+
+Shared contracts declare request/response types, enums, pagination/error/Actor-related common types without runtime provider or ORM dependencies. Controllers parse route UUIDs, expose typed workflow DTO bodies in Swagger, and workflows apply their owner validators. The web imports contracts and calls HTTP, never backend functions.
 
 ### Secondary client boundary
 

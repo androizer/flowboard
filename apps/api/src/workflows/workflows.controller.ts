@@ -14,12 +14,29 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { AccessGuard, CurrentActor } from '../identity/access.guard';
 import { DomainActor } from '../permissions/permissions.service';
 import { WorkflowsService } from './workflows.service';
+import {
+  CreateContainerDto,
+  CreateFieldDto,
+  FieldDefinitionDto,
+  PutGrantDto,
+  PutStatusSetDto,
+  RenameWorkspaceDto,
+  ReorderContainersDto,
+  ReorderFieldsDto,
+  TaskCreateDto,
+  TaskMoveDto,
+  TaskPlacementDto,
+  TaskUpdateDto,
+  UpdateContainerDto,
+} from './workflows.dto';
 
 @Controller('v1')
 @UseGuards(AccessGuard)
+@ApiBearerAuth()
 export class WorkflowsController {
   constructor(private readonly workflows: WorkflowsService) {}
 
@@ -35,7 +52,7 @@ export class WorkflowsController {
   renameWorkspace(
     @CurrentActor() actor: DomainActor,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() body: unknown,
+    @Body() body: RenameWorkspaceDto,
   ) {
     return this.workflows.renameWorkspace(actor, id, body);
   }
@@ -54,7 +71,7 @@ export class WorkflowsController {
   }
 
   @Post('containers')
-  createContainer(@CurrentActor() actor: DomainActor, @Body() body: unknown) {
+  createContainer(@CurrentActor() actor: DomainActor, @Body() body: CreateContainerDto) {
     return this.workflows.createContainer(actor, body);
   }
 
@@ -62,7 +79,7 @@ export class WorkflowsController {
   @HttpCode(200)
   reorderContainers(
     @CurrentActor() actor: DomainActor,
-    @Body() body: unknown,
+    @Body() body: ReorderContainersDto,
   ) {
     return this.workflows.reorderContainers(actor, body);
   }
@@ -79,7 +96,7 @@ export class WorkflowsController {
   updateContainer(
     @CurrentActor() actor: DomainActor,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() body: unknown,
+    @Body() body: UpdateContainerDto,
   ) {
     return this.workflows.updateContainer(actor, id, body);
   }
@@ -105,7 +122,7 @@ export class WorkflowsController {
   putContainerStatusSet(
     @CurrentActor() actor: DomainActor,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() body: unknown,
+    @Body() body: PutStatusSetDto,
   ) {
     return this.workflows.putStatusSet(actor, id, body);
   }
@@ -132,7 +149,7 @@ export class WorkflowsController {
   putWorkspaceStatusSet(
     @CurrentActor() actor: DomainActor,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() body: unknown,
+    @Body() body: PutStatusSetDto,
   ) {
     if (id !== actor.workspaceId) throw new NotFoundException('Workspace is unavailable.');
     return this.workflows.putStatusSet(actor, null, body);
@@ -157,7 +174,7 @@ export class WorkflowsController {
   createField(
     @CurrentActor() actor: DomainActor,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() body: unknown,
+    @Body() body: CreateFieldDto,
   ) {
     return this.workflows.createField(actor, id, body);
   }
@@ -167,7 +184,7 @@ export class WorkflowsController {
   reorderFields(
     @CurrentActor() actor: DomainActor,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() body: unknown,
+    @Body() body: ReorderFieldsDto,
   ) {
     return this.workflows.reorderFields(actor, id, body);
   }
@@ -176,7 +193,7 @@ export class WorkflowsController {
   updateField(
     @CurrentActor() actor: DomainActor,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() body: unknown,
+    @Body() body: FieldDefinitionDto,
   ) {
     return this.workflows.updateField(actor, id, body);
   }
@@ -203,7 +220,7 @@ export class WorkflowsController {
     @CurrentActor() actor: DomainActor,
     @Param('id', ParseUUIDPipe) id: string,
     @Param('userId', ParseUUIDPipe) userId: string,
-    @Body() body: unknown,
+    @Body() body: PutGrantDto,
   ) {
     return this.workflows.putGrant(actor, id, userId, body);
   }
@@ -292,7 +309,7 @@ export class WorkflowsController {
   create(
     @CurrentActor() actor: DomainActor,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() body: unknown,
+    @Body() body: TaskCreateDto,
   ) {
     return this.workflows.create(actor, id, body);
   }
@@ -301,7 +318,7 @@ export class WorkflowsController {
   update(
     @CurrentActor() actor: DomainActor,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() body: unknown,
+    @Body() body: TaskUpdateDto,
   ) {
     return this.workflows.update(actor, id, body);
   }
@@ -311,7 +328,7 @@ export class WorkflowsController {
   placement(
     @CurrentActor() actor: DomainActor,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() body: unknown,
+    @Body() body: TaskPlacementDto,
   ) {
     return this.workflows.placement(actor, id, body);
   }
@@ -321,7 +338,7 @@ export class WorkflowsController {
   move(
     @CurrentActor() actor: DomainActor,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() body: unknown,
+    @Body() body: TaskMoveDto,
   ) {
     return this.workflows.move(actor, id, body);
   }
